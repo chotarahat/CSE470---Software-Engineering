@@ -29,18 +29,18 @@ A platform that offers anonymous, non-clinical support for students facing stres
 - Tools: GitHub (version control), Postman (API testing)
 
 ## Installation
-- Clone the repository
+- Clone the repository :
   git clone https://github.com/your-repo-link.git, 
   cd project-folder
-- Backend setup
+- Backend setup :
   cd backend, 
   npm install, 
   npm start
-- Frontend setup
+- Frontend setup :
   cd frontend, 
   npm install, 
   npm start
-- Database setup
+- Database setup :
   Configure MongoDB Atlas connection string in .env file.
 
 ## Usage
