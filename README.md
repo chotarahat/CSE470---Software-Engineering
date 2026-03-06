@@ -55,7 +55,7 @@ SRS document: https://docs.google.com/document/d/12rxbVmFNjCOYSOCjuSBnnOXXdChIOs
 
 ## Contributors
 
-- Md. Neamatullah Rahatso what can 
+- Md. Neamatullah Rahat
 - Tasnim Zarin Jhilik
 - Shams Tahmid Malitha Nafi
 - Ahmed Mansib
