@@ -7,6 +7,7 @@ The purpose of this course is to learn how to develop a software application fro
 ## Description
 
 A platform that offers anonymous, non-clinical support for students facing stress, anxiety, academic pressure, or personal challenges. It ensures privacy, connects students with counselors without revealing identity, and provides self-help resources along with administrative analytics.
+SRS document: https://docs.google.com/document/d/12rxbVmFNjCOYSOCjuSBnnOXXdChIOsFnFUUPAYMyn6Q/edit?usp=sharing
 
 ## Features
 
