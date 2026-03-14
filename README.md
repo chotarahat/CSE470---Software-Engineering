@@ -1,4 +1,4 @@
-## CSE470---Software-Engineering
+## CSE470---Software-Engineering (Group - 4)
 The purpose of this course is to learn how to develop a software application from scratch.
 
 ## Project Name : Student Mental Health Anonymous Support Portal (Non-Clinical)
