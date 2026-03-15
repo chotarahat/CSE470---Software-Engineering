@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
 const { autoAssignCounselor } = require('../utils/assignmentLogic');
+const generatePseudonym = require('../utils/pseudonymGenerator');
 
 // POST /api/tickets  — anonymous submission
 const createTicket = async (req, res) => {
@@ -10,6 +11,7 @@ const createTicket = async (req, res) => {
 
     // Generate anonymous token for the student to track their ticket
     const anonymousToken = crypto.randomBytes(32).toString('hex');
+    const pseudonym = generatePseudonym();
 
     const counselor = await autoAssignCounselor();
 
@@ -17,6 +19,7 @@ const createTicket = async (req, res) => {
       category,
       priority,
       description,
+      pseudonym,
       anonymousToken,
       assignedCounselor: counselor ? counselor._id : null,
       status: counselor ? 'in-progress' : 'open',
@@ -31,6 +34,7 @@ const createTicket = async (req, res) => {
     // Return the anonymous token ONCE — the student must save it
     res.status(201).json({
       ticketId: ticket.ticketId,
+      pseudonym,
       status: ticket.status,
       anonymousToken,
       message: 'Ticket submitted. Save your anonymous token to track this ticket.',

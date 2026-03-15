@@ -13,6 +13,10 @@ const ticketSchema = new mongoose.Schema({
     ref: 'Category',
     required: true,
   },
+  pseudonym: {
+    type:String,
+    default:null,
+  },
   priority: {
     type: String,
     enum: ['low', 'medium', 'high', 'urgent'],
