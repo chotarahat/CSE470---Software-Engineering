@@ -14,7 +14,7 @@ export default function HomePage() {
           <em>this alone.</em>
         </h1>
         <p className="hero-sub">
-          MindBridge connects you with professional counselors — completely anonymously.
+          Ventify connects you with professional counselors — completely anonymously.
           No account required. No identity stored.
         </p>
         <div className="hero-actions">
