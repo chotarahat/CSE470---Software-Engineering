@@ -41,7 +41,7 @@ export default function LoginPage() {
       <div className="login-card card">
         <div className="login-header">
           <span className="login-logo">🧠</span>
-          <h2>MindBridge</h2>
+          <h2>Ventify</h2>
           <p>{mode === 'login' ? 'Sign in to your account' : 'Create a new account'}</p>
         </div>
 
