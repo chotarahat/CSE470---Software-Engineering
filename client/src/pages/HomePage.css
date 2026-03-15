@@ -1,0 +1,92 @@
+.home { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 5rem 1rem 4rem;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse at center, rgba(74,174,232,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-badge {
+  display: inline-block;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid rgba(74,174,232,0.3);
+  border-radius: 99px;
+  padding: 0.3rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+.hero-title {
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  line-height: 1.1;
+  margin-bottom: 1.25rem;
+  color: var(--text-primary);
+}
+.hero-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+.hero-sub {
+  max-width: 520px;
+  margin: 0 auto 2rem;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.hero-btn { padding: 0.75rem 1.75rem; font-size: 0.95rem; }
+
+/* Features */
+.features { margin: 3rem 0; }
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+.feature-card { text-align: center; }
+.feature-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+.feature-card h3 { font-family: var(--font-sans); font-weight: 600; margin-bottom: 0.4rem; font-size: 0.95rem; }
+.feature-card p { font-size: 0.85rem; }
+
+/* How it works */
+.how-it-works { margin: 3rem 0; }
+.how-it-works h2 { margin-bottom: 1.5rem; text-align: center; }
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  position: relative;
+}
+.step-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+.step-num {
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  color: var(--accent-dim);
+  line-height: 1;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--accent-dim);
+  width: fit-content;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius);
+}
+.step-card h3 { font-family: var(--font-sans); font-weight: 600; margin-bottom: 0.4rem; font-size: 0.95rem; }
+.step-card p  { font-size: 0.85rem; }
+
+/* Resources section */
+.resources-section { margin: 3rem 0; }
