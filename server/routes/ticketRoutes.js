@@ -11,9 +11,9 @@ const {
 } = require('../controllers/ticketController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
-
+const hashIP=require('../middleware/ipHashMiddleware');
 // Public — no auth required
-router.post('/', createTicket);
+router.post('/', hashIP,createTicket);
 router.get('/track/:ticketId', trackTicket);
 
 // Protected routes

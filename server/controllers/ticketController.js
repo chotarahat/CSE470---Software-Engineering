@@ -21,6 +21,7 @@ const createTicket = async (req, res) => {
       description,
       pseudonym,
       anonymousToken,
+      hashedIP:req.hashedIP,
       assignedCounselor: counselor ? counselor._id : null,
       status: counselor ? 'in-progress' : 'open',
     });

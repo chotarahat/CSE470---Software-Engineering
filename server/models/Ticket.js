@@ -17,6 +17,10 @@ const ticketSchema = new mongoose.Schema({
     type:String,
     default:null,
   },
+  hashedIP:{
+    type:String,
+    required:true,
+  },
   priority: {
     type: String,
     enum: ['low', 'medium', 'high', 'urgent'],
