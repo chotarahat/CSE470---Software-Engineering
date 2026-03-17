@@ -1,7 +1,7 @@
 ## CSE470---Software-Engineering (Group - 4)
 The purpose of this course is to learn how to develop a software application from scratch.
 
-## Project Name : Student Mental Health Anonymous Support Portal (Non-Clinical)
+## Project Name : Ventify (Non-Clinical)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## Description
