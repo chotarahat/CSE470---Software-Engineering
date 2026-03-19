@@ -1,0 +1,86 @@
+.student-dashboard { padding-bottom: 3rem; }
+
+.dashboard-header { margin-bottom: 2rem; }
+.dashboard-header h1 { margin-bottom: 0.4rem; }
+
+/* Tab Nav */
+.tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.6rem 1rem;
+  margin-bottom: -1px;
+  transition: var(--transition);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.tab-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-panel { animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* Submitted success */
+.submitted-success { text-align: center; margin-bottom: 1.5rem; }
+.success-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+.submitted-success h2 { margin-bottom: 0.5rem; }
+.submitted-success p { font-size: 0.875rem; }
+
+/* Token box */
+.token-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.token-row { display: flex; flex-direction: column; gap: 0.25rem; }
+.token-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.token-value {
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem;
+  color: var(--accent);
+  background: var(--bg-card);
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-dim);
+  word-break: break-all;
+  user-select: all;
+}
+.token-long { font-size: 0.75rem; }
+
+/* Ticket info grid */
+.ticket-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.ticket-info-grid > div { display: flex; flex-direction: column; gap: 0.3rem; }
+.info-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Saved ticket row */
+.saved-ticket-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+.saved-ticket-info { flex: 1; }

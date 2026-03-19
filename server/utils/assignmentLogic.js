@@ -1,24 +1,78 @@
+// module.exports = { autoAssignCounselor };
+
 const User = require('../models/User');
+const Ticket = require('../models/Ticket');
 
 /**
- * Auto-assign a ticket to the counselor with the fewest active tickets.
- * Returns the counselor document or null if none available.
+ * Feature 2 — Auto-assign a ticket to the counselor with the lowest
+ * LIVE active ticket count (excludes resolved/closed).
+ * Falls back to null if no available counselor exists.
  */
 const autoAssignCounselor = async () => {
-  // Find all available counselors
-  const counselors = await User.find({ role: 'counselor', availability: true });
-
+  // Only consider counselors who are marked available
+  const counselors = await User.find({ role: 'counselor', availability: true }).select('_id name');
   if (!counselors || counselors.length === 0) return null;
 
-  // Pick the counselor with the fewest assigned tickets
-  let selected = counselors[0];
-  for (const counselor of counselors) {
-    if ((counselor.assignedTickets?.length || 0) < (selected.assignedTickets?.length || 0)) {
-      selected = counselor;
+  // Count active (non-terminal) tickets per counselor via real DB query
+  // This avoids stale array counts from User.assignedTickets
+  const workloads = await Promise.all(
+    counselors.map(async (c) => {
+      const activeCount = await Ticket.countDocuments({
+        assignedCounselor: c._id,
+        status: { $nin: ['resolved', 'closed'] },
+      });
+      return { counselor: c, activeCount };
+    })
+  );
+
+  // Sort by active count ascending, pick the lowest
+  workloads.sort((a, b) => a.activeCount - b.activeCount);
+
+  return workloads[0].counselor;
+};
+
+/**
+ * When a counselor toggles availability to false, reassign their open tickets.
+ * Call this after saving the counselor's availability = false.
+ */
+const redistributeTickets = async (unavailableCounselorId) => {
+  const Ticket = require('../models/Ticket');
+
+  // Find all active tickets from this counselor
+  const orphanedTickets = await Ticket.find({
+    assignedCounselor: unavailableCounselorId,
+    status: { $nin: ['resolved', 'closed'] },
+  });
+
+  for (const ticket of orphanedTickets) {
+    // Temporarily set counselor unavailable so autoAssign skips them
+    const newCounselor = await User.findOne({
+      role: 'counselor',
+      availability: true,
+      _id: { $ne: unavailableCounselorId },
+    });
+
+    if (newCounselor) {
+      // Remove from old counselor
+      await User.findByIdAndUpdate(unavailableCounselorId, { $pull: { assignedTickets: ticket._id } });
+
+      ticket.assignedCounselor = newCounselor._id;
+      ticket.status = 'assigned';
+      ticket.assignedAt = new Date();
+      await ticket.save();
+
+      await User.findByIdAndUpdate(newCounselor._id, { $addToSet: { assignedTickets: ticket._id } });
+    } else {
+      // No counselors available — set ticket back to open
+      ticket.assignedCounselor = null;
+      ticket.status = 'open';
+      ticket.assignedAt = null;
+      await ticket.save();
+      await User.findByIdAndUpdate(unavailableCounselorId, { $pull: { assignedTickets: ticket._id } });
     }
   }
 
-  return selected;
+  return orphanedTickets.length;
 };
 
-module.exports = { autoAssignCounselor };
+module.exports = { autoAssignCounselor, redistributeTickets };
