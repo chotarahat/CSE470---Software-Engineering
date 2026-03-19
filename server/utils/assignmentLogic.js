@@ -1,4 +1,4 @@
-module.exports = { autoAssignCounselor };
+// module.exports = { autoAssignCounselor };
 
 const User = require('../models/User');
 const Ticket = require('../models/Ticket');

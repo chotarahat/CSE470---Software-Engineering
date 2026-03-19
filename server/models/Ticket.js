@@ -1,4 +1,4 @@
-module.exports = mongoose.model('Ticket', ticketSchema);
+// module.exports = mongoose.model('Ticket', ticketSchema);
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 
