@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getMessages, sendMessage, sendAnonymousMessage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './TicketChat.css';
+import QUICK_REPLIES from '../utils/quickReplies';
 
 export default function TicketChat({ ticket, anonymousToken }) {
   const { user } = useAuth();
@@ -13,6 +14,14 @@ export default function TicketChat({ ticket, anonymousToken }) {
   const bottomRef = useRef(null);
 
   const ticketMongoId = ticket._id;
+
+  const handleTemplateSelect = (e) =>{
+    const selected = QUICK_REPLIES.find(r=>r.id===parseInt(e.target.value));
+    if (selected){
+      setText(selected.text);
+    }
+  }; 
+
 
   const fetchMessages = async () => {
     try {
@@ -94,6 +103,18 @@ export default function TicketChat({ ticket, anonymousToken }) {
       {error && <div className="alert alert-error" style={{ margin: '0.5rem 1rem' }}>{error}</div>}
 
       {ticket.status !== 'closed' && (
+        <div className='chat-input-container'>
+
+          {!anonymousToken &&(
+            <div className='quick-reply-wrapper' style={{padding:'0.5rem',borderBottom:'1px solid var(--border)'}}>
+              <select onChange={handleTemplateSelect} classname='btn-secondary'>
+                {QUICK_REPLIES.map(r=>(
+                  <option key={r.id} value={r.id}>{r.title}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
         <form className="chat-input-row" onSubmit={handleSend}>
           <input
             type="text"
@@ -105,6 +126,7 @@ export default function TicketChat({ ticket, anonymousToken }) {
             {sending ? '...' : 'Send'}
           </button>
         </form>
+      </div>
       )}
       {ticket.status === 'closed' && (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '1rem', fontSize: '0.85rem' }}>
