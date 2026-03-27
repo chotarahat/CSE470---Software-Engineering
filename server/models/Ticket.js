@@ -19,6 +19,19 @@ const ticketSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high', 'urgent'],
     default: 'medium',
   },
+  priorityHistory:[{
+    oldPriority:String,
+    newPriority:String,
+    changedAt:{type:Date,default:Date.now}
+  }],
+  sentimentScore:{
+    type:Number,
+    default:0
+  },
+  crisisFlag:{
+    type:Boolean,
+    default:false
+  },
   description: {
     type: String,
     required: [true, 'Description is required'],

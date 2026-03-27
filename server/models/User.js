@@ -24,6 +24,22 @@ const userSchema = new mongoose.Schema({
     enum: ['student', 'counselor', 'admin'],
     default: 'student',
   },
+  twoFactorSecret: {
+    type:String,
+    select:false
+  },
+  isMFAEnabled:{
+    type:Boolean,
+    default:false
+  },
+  specialties: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref:'Category'
+  }],
+  shiftSchedule:{
+    start:String,
+    end:String
+  },
   // Counselor-specific fields
   availability: {
     type: Boolean,

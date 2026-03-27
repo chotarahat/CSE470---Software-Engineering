@@ -3,16 +3,21 @@ const Ticket = require('../models/Ticket');
 const User = require('../models/User');
 const Message = require('../models/Message');
 const { autoAssignCounselor } = require('../utils/assignmentLogic');
+const { worker } = require('cluster');
 
 // POST /api/tickets  — anonymous submission
 const createTicket = async (req, res) => {
   try {
     const { category, priority, description } = req.body;
+    // const counselor = await autoAssignCounselor(category);
     if (!description || description.trim().length < 10)
       return res.status(400).json({ message: 'Description must be at least 10 characters.' });
 
+    const crisisKeywords=['harm','suicide','kill','end it','hurt myself', 'emergency'];
+    const isCrisis=crisisKeywords.some(word => description.toLowerCase().includes(word));
+
     const anonymousToken = crypto.randomBytes(32).toString('hex');
-    const counselor = await autoAssignCounselor();
+    const counselor = await autoAssignCounselor(category);
 
     const ticket = await Ticket.create({
       category,
@@ -22,6 +27,7 @@ const createTicket = async (req, res) => {
       assignedCounselor: counselor ? counselor._id : null,
       status: counselor ? 'assigned' : 'open',
       assignedAt: counselor ? new Date() : null,
+      crisisFlag:isCrisis,
     });
 
     if (counselor) {
@@ -33,7 +39,10 @@ const createTicket = async (req, res) => {
       ticketId: ticket.ticketId,
       status: ticket.status,
       anonymousToken,
-      message: 'Ticket submitted. Save your anonymous token — it cannot be recovered.',
+      crisisFlag:isCrisis,
+      message: isCrisis
+      ?'Ticket submitted. IMMEDIATE HELP: If you are in danger, please contact local emergency services or the hotlines shown on screen.'
+      :'Ticket submitted. Save your anonymous token — it cannot be recovered.',
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
