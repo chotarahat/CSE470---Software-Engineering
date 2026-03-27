@@ -159,12 +159,45 @@ export default function StudentDashboard() {
               
               <div className="ticket-info-grid">
                 <div>
+                  <span className="info-label">Category</span>
+                  <span>{trackedTicket.category?.name || 'Uncategorized'}</span>
+                </div>
+                <div>
+                  <span className="info-label">Priority</span>
+                  <span className={`badge badge-${trackedTicket.priority}`}>{trackedTicket.priority}</span>
+                </div>
+                <div style={{ gridColumn: '1 / -1', margin: '0.5rem 0', padding: '0.75rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                  <span className="info-label" style={{ color: 'var(--accent)', letterSpacing: '0.05em' }}>Matched Specialist</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.3rem' }}>
+                    <span style={{ fontSize: '1.4rem' }}>🎓</span>
+                    <div>
+                      <div style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '1rem' }}>
+                        {trackedTicket.assignedCounselor || 'System Assigning...'}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        Verified Professional
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <span className='info-label'>Submitted On</span>
+                  <span>{new Date(trackedTicket.createdAt).toLocaleDateString()}</span>
+                </div>
+
+                {/* <div>
                   <span className="info-label">Counselor</span>
                   <span style={{ fontWeight: '500' }}>{trackedTicket.assignedCounselor}</span>
                 </div>
-                <div>
-                  <span className="info-label">Category</span>
-                  <span>{trackedTicket.category?.name || 'Uncategorized'}</span>
+  
+                <div style={{gridColumn:'1/-1',marginTop:'0.5rem',borderTop:'1px dashed var(--border)',paddingTop:'0.5rem'}}>
+                  <span className='info-label'>Matched Specialist</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                    <span style={{ fontSize: '1.2rem' }}>🎓</span>
+                    <span style={{ fontWeight: '600', color: 'var(--accent)' }}>
+                      {trackedTicket.assignedCounselor || 'General Support assigned'}
+                    </span>
+                  </div>
                 </div>
                 <div>
                   <span className="info-label">Priority</span>
@@ -173,7 +206,7 @@ export default function StudentDashboard() {
                 <div>
                   <span className="info-label">Submitted</span>
                   <span>{new Date(trackedTicket.createdAt).toLocaleDateString()}</span>
-                </div>
+                </div> */}
               </div>
               
               <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>

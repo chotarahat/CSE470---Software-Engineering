@@ -21,6 +21,10 @@ export default function TicketForm({ onSuccess }) {
     setError('');
     try {
       const res = await submitTicket(form);
+      if (res.data.crisisFlag){
+        alert("EMERGENCY DETECTED: Based on your description. we strongly contacting the campus 24/7 hotline at 999 or local emergency services immediately.");
+      }
+      
       onSuccess(res.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit ticket.');
