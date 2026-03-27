@@ -1,32 +1,44 @@
 // module.exports = { autoAssignCounselor };
 
-const User = require('../models/User');
-const Ticket = require('../models/Ticket');
+ const User = require('../models/User');
+ const Ticket = require('../models/Ticket');
 
 /**
  * Feature 2 — Auto-assign a ticket to the counselor with the lowest
  * LIVE active ticket count (excludes resolved/closed).
  * Falls back to null if no available counselor exists.
  */
-const autoAssignCounselor = async () => {
+const autoAssignCounselor = async (ticketCategoryId) => {
   // Only consider counselors who are marked available
-  const counselors = await User.find({ role: 'counselor', availability: true }).select('_id name');
-  if (!counselors || counselors.length === 0) return null;
+ 
+  
+  let candidates=await User.find({
+    role:"counselor",
+    availability:true,
+    specialties:ticketCategoryId
+  });
+
+  // const counselors = await User.find({ role: 'counselor', availability: true }).select('_id name');
+  if (!candidates || candidates.length === 0) {
+    candidates=await User.find({role:'counselor',availability:true});
+  }
+  if (candidates.length===0) return null;
+
 
   // Count active (non-terminal) tickets per counselor via real DB query
   // This avoids stale array counts from User.assignedTickets
   const workloads = await Promise.all(
-    counselors.map(async (c) => {
-      const activeCount = await Ticket.countDocuments({
+    candidates.map(async (c) => {
+      const count = await Ticket.countDocuments({
         assignedCounselor: c._id,
         status: { $nin: ['resolved', 'closed'] },
       });
-      return { counselor: c, activeCount };
+      return { counselor: c, count };
     })
   );
 
   // Sort by active count ascending, pick the lowest
-  workloads.sort((a, b) => a.activeCount - b.activeCount);
+  workloads.sort((a, b) => a.count - b.count);
 
   return workloads[0].counselor;
 };
