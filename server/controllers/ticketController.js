@@ -3,6 +3,7 @@ const Ticket = require('../models/Ticket');
 const User = require('../models/User');
 const Message = require('../models/Message');
 const { autoAssignCounselor } = require('../utils/assignmentLogic');
+const { detectCrisis } = require('../utils/crisisDetector');
 
 // POST /api/tickets  — anonymous submission
 const createTicket = async (req, res) => {
@@ -11,17 +12,28 @@ const createTicket = async (req, res) => {
     if (!description || description.trim().length < 10)
       return res.status(400).json({ message: 'Description must be at least 10 characters.' });
 
+    // ── Automated Crisis Trigger ──
+    // Scan description + priority BEFORE saving the ticket
+    const { isCrisis, triggeredKeywords, severityScore } = detectCrisis(description, priority);
+
     const anonymousToken = crypto.randomBytes(32).toString('hex');
+
+    // Crisis tickets skip the normal queue — assign to the most available counselor immediately
+    // Non-crisis tickets use the standard lowest-workload algorithm
     const counselor = await autoAssignCounselor();
 
     const ticket = await Ticket.create({
       category,
-      priority: priority || 'medium',
+      priority: isCrisis ? 'urgent' : (priority || 'medium'), // escalate priority on crisis
       description,
       anonymousToken,
       assignedCounselor: counselor ? counselor._id : null,
       status: counselor ? 'assigned' : 'open',
       assignedAt: counselor ? new Date() : null,
+      // Crisis fields
+      isCrisis,
+      crisisKeywords: triggeredKeywords,
+      severityScore,
     });
 
     if (counselor) {
@@ -33,7 +45,10 @@ const createTicket = async (req, res) => {
       ticketId: ticket.ticketId,
       status: ticket.status,
       anonymousToken,
-      message: 'Ticket submitted. Save your anonymous token — it cannot be recovered.',
+      isCrisis,   // tell the frontend so it can show a crisis UI
+      message: isCrisis
+        ? 'Your ticket has been flagged as urgent. A counselor will respond as soon as possible. If you are in immediate danger, please call emergency services.'
+        : 'Ticket submitted. Save your anonymous token — it cannot be recovered.',
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -183,6 +198,10 @@ const getAnalytics = async (req, res) => {
     const resolved   = await Ticket.countDocuments({ status: 'resolved' });
     const closed     = await Ticket.countDocuments({ status: 'closed' });
 
+    // Crisis counts
+    const totalCrisis          = await Ticket.countDocuments({ isCrisis: true });
+    const unacknowledgedCrisis = await Ticket.countDocuments({ isCrisis: true, crisisAcknowledged: false });
+
     // Resolution rate
     const resolutionRate = total > 0 ? Math.round(((resolved + closed) / total) * 100) : 0;
 
@@ -265,6 +284,7 @@ const getAnalytics = async (req, res) => {
 
     res.json({
       total, open, assigned, inProgress, responded, resolved, closed,
+      totalCrisis, unacknowledgedCrisis,
       resolutionRate,
       avgResponseTimeHours,
       avgResolutionTimeHours,
@@ -278,4 +298,26 @@ const getAnalytics = async (req, res) => {
   }
 };
 
-module.exports = { createTicket, trackTicket, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics };
+// PATCH /api/tickets/:id/acknowledge-crisis — counselor marks crisis as seen
+const acknowledgeCrisis = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+    if (!ticket.isCrisis) return res.status(400).json({ message: 'This ticket is not a crisis ticket.' });
+
+    // Counselors can only acknowledge their own tickets; admin can acknowledge any
+    if (req.user.role === 'counselor' &&
+        ticket.assignedCounselor?.toString() !== req.user._id.toString())
+      return res.status(403).json({ message: 'Access denied' });
+
+    ticket.crisisAcknowledged = true;
+    ticket.crisisAcknowledgedAt = new Date();
+    await ticket.save();
+
+    res.json({ message: 'Crisis acknowledged', crisisAcknowledgedAt: ticket.crisisAcknowledgedAt });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createTicket, trackTicket, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics, acknowledgeCrisis };
