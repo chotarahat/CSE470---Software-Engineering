@@ -1,4 +1,3 @@
-// module.exports = mongoose.model('Ticket', ticketSchema);
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 
@@ -42,9 +41,16 @@ const ticketSchema = new mongoose.Schema({
     required: true,
   },
   // ── Lifecycle timestamps (SRS analytics requirement) ──
-  assignedAt:      { type: Date, default: null },   // when counselor assigned
-  firstResponseAt: { type: Date, default: null },   // when counselor sent first message
-  resolvedAt:      { type: Date, default: null },   // when marked resolved/closed
+  assignedAt:      { type: Date, default: null },
+  firstResponseAt: { type: Date, default: null },
+  resolvedAt:      { type: Date, default: null },
+
+  // ── Automated Crisis Trigger fields ──
+  isCrisis:           { type: Boolean, default: false },     // flagged by crisisDetector
+  crisisKeywords:     [{ type: String }],                    // which keywords triggered it
+  severityScore:      { type: Number, default: 0 },          // total keyword weight score
+  crisisAcknowledged: { type: Boolean, default: false },     // counselor has seen the alert
+  crisisAcknowledgedAt: { type: Date, default: null },       // when they acknowledged it
 }, { timestamps: true });
 
 // ── Valid status transitions ──
