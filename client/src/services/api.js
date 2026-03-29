@@ -31,6 +31,8 @@ export const updateTicketStatus = (id, status) =>
   API.patch(`/tickets/${id}/status`, { status });
 export const reassignTicket = (id, counselorId) =>
   API.patch(`/tickets/${id}/assign`, { counselorId });
+export const acknowledgeCrisis = (id) =>
+  API.patch(`/tickets/${id}/acknowledge-crisis`);
 export const getAnalytics = () => API.get('/tickets/analytics');
 
 // ── Messages ──────────────────────────────────────────
