@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import KillSwitch from './KillSwitch'; // 👈 IMPORT THE NEW COMPONENT
 import './Navbar.css';
 
 export default function Navbar() {
@@ -43,6 +44,11 @@ export default function Navbar() {
         </div>
 
         <div className="navbar-actions">
+          
+          {/* 🚨 RENDER IT WITH ONE LINE OF CODE 🚨 */}
+          <KillSwitch />
+
+          {/* EXISTING: Auth Buttons */}
           {user ? (
             <div className="user-menu">
               <span className="user-info">
