@@ -1,0 +1,204 @@
+.admin-dashboard { padding-bottom: 3rem; }
+.dashboard-header { margin-bottom: 2rem; }
+.dashboard-header h1 { margin-bottom: 0.3rem; }
+
+/* Tab nav — reuse from student */
+.tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.6rem 1rem;
+  margin-bottom: -1px;
+  transition: var(--transition);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.tab-btn:hover  { color: var(--text-primary); background: var(--bg-hover); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Bar chart rows */
+.card-section-title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+.bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-surface);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.bar-fill-purple { background: var(--purple); }
+.bar-count {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  min-width: 24px;
+  text-align: right;
+}
+
+/* Counselor cards */
+.counselor-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.counselor-avatar {
+  width: 42px; height: 42px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.counselor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.875rem;
+}
+.counselor-info span { color: var(--text-muted); font-size: 0.8rem; }
+
+/* Category rows */
+.cat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+.cat-row:last-child { border-bottom: none; }
+
+/* ── KPI row ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+  padding: 1.25rem 1rem;
+}
+.kpi-ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kpi-ring svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.kpi-ring-val {
+  position: relative;
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  z-index: 1;
+}
+.kpi-big-val {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  line-height: 1;
+}
+.kpi-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+.kpi-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* ── Trend chart ── */
+.trend-chart-wrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+.trend-chart {
+  width: 100%;
+  min-width: 300px;
+  display: block;
+}
+
+/* ── Counselor workload ── */
+.workload-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.workload-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.workload-avatar {
+  width: 34px; height: 34px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.workload-info {
+  display: flex; align-items: center; gap: 0.5rem;
+  min-width: 160px;
+}
+.workload-info strong { font-size: 0.875rem; }
+.workload-count {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 36px;
+}
+.workload-num {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--accent);
+  line-height: 1;
+}
+.workload-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-surface);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.workload-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.overview-tab { animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
