@@ -25,6 +25,8 @@ export const toggleAvailability = () => API.patch('/users/availability');
 export const submitTicket = (data) => API.post('/tickets', data);
 export const trackTicket = (ticketId, token) =>
   API.get(`/tickets/track/${ticketId}?token=${token}`);
+export const updateTrackedTicketPriority = (ticketId, token, priority) =>
+  API.patch(`/tickets/track/${ticketId}/priority?token=${token}`, { priority });
 export const getTickets = () => API.get('/tickets');
 export const getTicketById = (id) => API.get(`/tickets/${id}`);
 export const updateTicketStatus = (id, status) =>

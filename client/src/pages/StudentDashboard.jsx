@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { trackTicket } from '../services/api';
+import { trackTicket, updateTrackedTicketPriority } from '../services/api';
 import TicketForm from '../components/TicketForm';
 import TicketChat from '../components/TicketChat';
 import './StudentDashboard.css';
@@ -15,6 +15,9 @@ export default function StudentDashboard() {
   const [trackedTicket, setTrackedTicket] = useState(null);
   const [trackError, setTrackError] = useState('');
   const [trackingLoading, setTrackingLoading] = useState(false);
+  const [priorityDraft, setPriorityDraft] = useState('medium');
+  const [prioritySaving, setPrioritySaving] = useState(false);
+  const [priorityError, setPriorityError] = useState('');
 
   // When a ticket is successfully submitted from the TicketForm component
   const handleTicketSubmitSuccess = (data) => {
@@ -44,10 +47,27 @@ export default function StudentDashboard() {
     try {
       const res = await trackTicket(trackForm.ticketId, trackForm.token);
       setTrackedTicket(res.data);
+      setPriorityDraft(res.data?.priority || 'medium');
+      setPriorityError('');
     } catch (err) {
       setTrackError(err.response?.data?.message || 'Could not find ticket. Check your ID and Token.');
     } finally {
       setTrackingLoading(false);
+    }
+  };
+
+  const handlePrioritySave = async () => {
+    if (!trackedTicket?.ticketId) return;
+    setPrioritySaving(true);
+    setPriorityError('');
+    try {
+      const res = await updateTrackedTicketPriority(trackedTicket.ticketId, trackForm.token, priorityDraft);
+      const updated = res.data?.ticket;
+      if (updated) setTrackedTicket((prev) => ({ ...prev, ...updated }));
+    } catch (err) {
+      setPriorityError(err.response?.data?.message || 'Failed to update priority.');
+    } finally {
+      setPrioritySaving(false);
     }
   };
 
@@ -165,6 +185,44 @@ export default function StudentDashboard() {
                 <div>
                   <span className="info-label">Priority</span>
                   <span className={`badge badge-${trackedTicket.priority}`}>{trackedTicket.priority}</span>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <span className="info-label">Update Priority</span>
+                  {priorityError && (
+                    <div className="alert alert-error" style={{ marginTop: '0.5rem' }}>
+                      {priorityError}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                    <select
+                      value={priorityDraft}
+                      onChange={(e) => setPriorityDraft(e.target.value)}
+                      disabled={prioritySaving || trackedTicket.status === 'closed'}
+                      style={{ minWidth: '220px' }}
+                    >
+                      <option value="low">Low — General guidance needed</option>
+                      <option value="medium">Medium — Struggling but stable</option>
+                      <option value="high">High — Significantly affected</option>
+                      <option value="urgent">Urgent — Need immediate help</option>
+                    </select>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handlePrioritySave}
+                      disabled={
+                        prioritySaving ||
+                        trackedTicket.status === 'closed' ||
+                        priorityDraft === (trackedTicket.priority || 'medium')
+                      }
+                    >
+                      {prioritySaving ? 'Saving...' : 'Save Priority'}
+                    </button>
+                    {trackedTicket.status === 'closed' && (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Closed tickets can’t be updated.
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div style={{ gridColumn: '1 / -1', margin: '0.5rem 0', padding: '0.75rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
                   <span className="info-label" style={{ color: 'var(--accent)', letterSpacing: '0.05em' }}>Matched Specialist</span>
