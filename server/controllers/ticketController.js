@@ -118,56 +118,6 @@ const getTicketById = async (req, res) => {
   }
 };
 
-// PATCH /api/tickets/track/:ticketId/priority?token=...
-// Students can update priority post-submission using their anonymous token.
-const updateTrackedTicketPriority = async (req, res) => {
-  try {
-    const { ticketId } = req.params;
-    const token = req.query.token || req.body?.token;
-    const { priority } = req.body;
-
-    if (!token) return res.status(400).json({ message: 'Token is required' });
-
-    const allowedPriorities = ['low', 'medium', 'high', 'urgent'];
-    if (!allowedPriorities.includes(priority))
-      return res.status(400).json({ message: `Invalid priority. Must be one of: ${allowedPriorities.join(', ')}` });
-
-    const ticket = await Ticket.findOne({ ticketId }).populate('category', 'name');
-    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
-    if (ticket.anonymousToken !== token) return res.status(403).json({ message: 'Invalid token' });
-
-    // Prevent changes once a ticket is closed (terminal)
-    if (ticket.status === 'closed')
-      return res.status(400).json({ message: 'Ticket is closed. Priority cannot be changed.' });
-
-    const oldPriority = ticket.priority;
-    if (oldPriority === priority) {
-      return res.json({ message: 'Priority unchanged', priority: ticket.priority });
-    }
-
-    ticket.priority = priority;
-    ticket.priorityHistory = ticket.priorityHistory || [];
-    ticket.priorityHistory.push({ oldPriority, newPriority: priority, changedAt: new Date() });
-    await ticket.save();
-
-    res.json({
-      message: `Priority updated: ${oldPriority} → ${priority}`,
-      ticket: {
-        _id: ticket._id,
-        ticketId: ticket.ticketId,
-        category: ticket.category,
-        priority: ticket.priority,
-        status: ticket.status,
-        description: ticket.description,
-        createdAt: ticket.createdAt,
-        updatedAt: ticket.updatedAt,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 // PATCH /api/tickets/:id/status
 // Feature 1: full lifecycle with transition validation
 // Lifecycle: open → assigned → in-progress → responded → resolved → closed
@@ -337,4 +287,4 @@ const getAnalytics = async (req, res) => {
   }
 };
 
-module.exports = { createTicket, trackTicket, updateTrackedTicketPriority, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics };
+module.exports = { createTicket, trackTicket, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics };
