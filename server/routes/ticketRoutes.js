@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createTicket,
   trackTicket,
+  updateTrackedTicketPriority,
   getTickets,
   getTicketById,
   updateTicketStatus,
@@ -15,6 +16,7 @@ const { authorize } = require('../middleware/roleMiddleware');
 // Public — no auth required
 router.post('/', createTicket);
 router.get('/track/:ticketId', trackTicket);
+router.patch('/track/:ticketId/priority', updateTrackedTicketPriority);
 
 // Protected routes
 router.get('/analytics', protect, authorize('admin'), getAnalytics);
