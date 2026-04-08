@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { submitTicket, getCategories } from '../services/api';
+import EmergencyOverlay from './EmergencyOverlay';
+import { detectCrisis } from '../utils/crisisDetector';
 
 export default function TicketForm({ onSuccess }) {
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({ category: '', priority: 'medium', description: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showEmergencyOverlay, setShowEmergencyOverlay] = useState(false);
 
   useEffect(() => {
     getCategories()
@@ -15,6 +18,11 @@ export default function TicketForm({ onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const isCrisis = detectCrisis(form.description);
+    if (isCrisis) {
+      setShowEmergencyOverlay(true);
+      return; 
+    }
     if (!form.category) return setError('Please select a category.');
     if (form.description.length < 10) return setError('Please describe your concern in more detail.');
     setLoading(true);
@@ -22,7 +30,8 @@ export default function TicketForm({ onSuccess }) {
     try {
       const res = await submitTicket(form);
       if (res.data.crisisFlag){
-        alert("EMERGENCY DETECTED: Based on your description. we strongly contacting the campus 24/7 hotline at 999 or local emergency services immediately.");
+        // alert("EMERGENCY DETECTED: Based on your description. we strongly contacting the campus 24/7 hotline at 999 or local emergency services immediately.");
+        setShowEmergencyOverlay(true);
       }
       
       onSuccess(res.data);
@@ -34,6 +43,7 @@ export default function TicketForm({ onSuccess }) {
   };
 
   return (
+    <>
     <form onSubmit={handleSubmit}>
       {error && <div className="alert alert-error">{error}</div>}
 
@@ -76,5 +86,9 @@ export default function TicketForm({ onSuccess }) {
         {loading ? 'Submitting...' : 'Submit Anonymously'}
       </button>
     </form>
+    {showEmergencyOverlay && (
+    <EmergencyOverlay onClose={() => setShowEmergencyOverlay(false)} />
+    )}
+    </>
   );
 }
