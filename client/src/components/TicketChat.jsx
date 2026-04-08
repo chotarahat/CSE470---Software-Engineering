@@ -11,17 +11,43 @@ export default function TicketChat({ ticket, anonymousToken }) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [newPriority, setNewPriority] = useState("");
   const bottomRef = useRef(null);
 
   const ticketMongoId = ticket._id;
 
-  const handleTemplateSelect = (e) =>{
-    const selected = QUICK_REPLIES.find(r=>r.id===parseInt(e.target.value));
-    if (selected){
+  const handleTemplateSelect = (e) => {
+    const selected = QUICK_REPLIES.find(r => r.id === parseInt(e.target.value));
+    if (selected) {
       setText(selected.text);
     }
-  }; 
+  };
 
+  // FIXED PRIORITY UPDATE FUNCTION
+  const updatePriority = async () => {
+    try {
+      const res = await fetch(`/api/tickets/${ticketMongoId}/priority`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          newPriority,
+          anonymousToken,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      alert("Priority updated successfully");
+      setNewPriority(""); // reset dropdown
+
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   const fetchMessages = async () => {
     try {
@@ -36,9 +62,8 @@ export default function TicketChat({ ticket, anonymousToken }) {
 
   useEffect(() => {
     fetchMessages();
-    const interval = setInterval(fetchMessages, 8000); // Poll every 8s
+    const interval = setInterval(fetchMessages, 8000);
     return () => clearInterval(interval);
-  // eslint-disable-next-line
   }, [ticketMongoId]);
 
   useEffect(() => {
@@ -48,16 +73,27 @@ export default function TicketChat({ ticket, anonymousToken }) {
   const handleSend = async (e) => {
     e.preventDefault();
     if (!text.trim()) return;
+
     setSending(true);
     setError('');
+
     try {
       if (anonymousToken) {
-        await sendAnonymousMessage({ ticketId: ticketMongoId, messageText: text, anonymousToken });
+        await sendAnonymousMessage({
+          ticketId: ticketMongoId,
+          messageText: text,
+          anonymousToken
+        });
       } else {
-        await sendMessage({ ticketId: ticketMongoId, messageText: text });
+        await sendMessage({
+          ticketId: ticketMongoId,
+          messageText: text
+        });
       }
+
       setText('');
       fetchMessages();
+
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send message.');
     } finally {
@@ -82,6 +118,7 @@ export default function TicketChat({ ticket, anonymousToken }) {
             <p>No messages yet. Start the conversation.</p>
           </div>
         )}
+
         {messages.map((msg) => {
           const side = getRole(msg);
           return (
@@ -89,47 +126,98 @@ export default function TicketChat({ ticket, anonymousToken }) {
               <div className={`chat-bubble ${side}`}>
                 <p>{msg.messageText}</p>
                 <span className="chat-meta">
-                  {msg.senderRole === 'student' ? 'Anonymous Student' : msg.sender?.name || msg.senderRole}
+                  {msg.senderRole === 'student'
+                    ? 'Anonymous Student'
+                    : msg.sender?.name || msg.senderRole}
                   {' · '}
-                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(msg.createdAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
                 </span>
               </div>
             </div>
           );
         })}
+
         <div ref={bottomRef} />
       </div>
 
-      {error && <div className="alert alert-error" style={{ margin: '0.5rem 1rem' }}>{error}</div>}
+      {error && (
+        <div className="alert alert-error" style={{ margin: '0.5rem 1rem' }}>
+          {error}
+        </div>
+      )}
 
       {ticket.status !== 'closed' && (
         <div className='chat-input-container'>
 
-          {!anonymousToken &&(
-            <div className='quick-reply-wrapper' style={{padding:'0.5rem',borderBottom:'1px solid var(--border)'}}>
-              <select onChange={handleTemplateSelect} classname='btn-secondary'>
-                {QUICK_REPLIES.map(r=>(
-                  <option key={r.id} value={r.id}>{r.title}</option>
+          {/*  PRIORITY UPDATE UI */}
+          <div style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)' }}>
+            <label style={{ marginRight: '10px' }}>Priority:</label>
+
+            <select
+              value={newPriority}
+              onChange={(e) => setNewPriority(e.target.value)}
+            >
+              <option value="">Select</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+
+            <button
+              onClick={updatePriority}
+              style={{ marginLeft: '10px' }}
+              disabled={!newPriority}
+            >
+              Update
+            </button>
+          </div>
+
+          {!anonymousToken && (
+            <div
+              className='quick-reply-wrapper'
+              style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)' }}
+            >
+              <select onChange={handleTemplateSelect} className='btn-secondary'>
+                {QUICK_REPLIES.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.title}
+                  </option>
                 ))}
               </select>
             </div>
           )}
 
-        <form className="chat-input-row" onSubmit={handleSend}>
-          <input
-            type="text"
-            placeholder="Type a message..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <button type="submit" className="btn btn-primary" disabled={sending || !text.trim()}>
-            {sending ? '...' : 'Send'}
-          </button>
-        </form>
-      </div>
+          <form className="chat-input-row" onSubmit={handleSend}>
+            <input
+              type="text"
+              placeholder="Type a message..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={sending || !text.trim()}
+            >
+              {sending ? '...' : 'Send'}
+            </button>
+          </form>
+        </div>
       )}
+
       {ticket.status === 'closed' && (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '1rem', fontSize: '0.85rem' }}>
+        <p
+          style={{
+            textAlign: 'center',
+            color: 'var(--text-muted)',
+            padding: '1rem',
+            fontSize: '0.85rem'
+          }}
+        >
           This ticket is closed. No further messages can be sent.
         </p>
       )}

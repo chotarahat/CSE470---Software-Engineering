@@ -336,5 +336,52 @@ const getAnalytics = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const updateTicketPriority = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { newPriority, anonymousToken } = req.body;
 
-module.exports = { createTicket, trackTicket, updateTrackedTicketPriority, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics };
+    if (!newPriority) {
+      return res.status(400).json({ message: "New priority is required" });
+    }
+
+    const validPriorities = ['low', 'medium', 'high', 'urgent'];
+    if (!validPriorities.includes(newPriority)) {
+      return res.status(400).json({ message: "Invalid priority value" });
+    }
+
+    const ticket = await Ticket.findOne({ ticketId });
+
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket not found" });
+    }
+
+    if (ticket.anonymousToken !== anonymousToken) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    if (ticket.priority === newPriority) {
+      return res.status(400).json({ message: "Priority already set" });
+    }
+
+    ticket.priorityHistory.push({
+      oldPriority: ticket.priority,
+      newPriority: newPriority,
+    });
+
+    ticket.priority = newPriority;
+
+    await ticket.save();
+
+    res.status(200).json({
+      message: "Priority updated successfully",
+      priority: ticket.priority,
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+module.exports = { createTicket, trackTicket, updateTrackedTicketPriority, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics, updateTicketPriority};
