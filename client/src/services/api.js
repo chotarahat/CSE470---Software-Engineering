@@ -25,14 +25,14 @@ export const toggleAvailability = () => API.patch('/users/availability');
 export const submitTicket = (data) => API.post('/tickets', data);
 export const trackTicket = (ticketId, token) =>
   API.get(`/tickets/track/${ticketId}?token=${token}`);
-export const updateTrackedTicketPriority = (ticketId, token, priority) =>
-  API.patch(`/tickets/track/${ticketId}/priority?token=${token}`, { priority });
 export const getTickets = () => API.get('/tickets');
 export const getTicketById = (id) => API.get(`/tickets/${id}`);
 export const updateTicketStatus = (id, status) =>
   API.patch(`/tickets/${id}/status`, { status });
 export const reassignTicket = (id, counselorId) =>
   API.patch(`/tickets/${id}/assign`, { counselorId });
+export const acknowledgeCrisis = (id) =>
+  API.patch(`/tickets/${id}/acknowledge-crisis`);
 export const getAnalytics = () => API.get('/tickets/analytics');
 
 // ── Messages ──────────────────────────────────────────
@@ -49,3 +49,14 @@ export const getCategories = () => API.get('/resources/categories');
 export const createCategory = (data) => API.post('/resources/categories', data);
 
 export default API;
+
+// ── Transcripts ───────────────────────────────────────────
+// Counselor / admin export — JWT required
+export const exportTranscript = (ticketMongoId) =>
+  API.get(`/transcripts/${ticketMongoId}/export`, { responseType: 'text' });
+
+// Anonymous student export — token in query string
+export const exportTranscriptAnonymous = (ticketMongoId, token) =>
+  API.get(`/transcripts/${ticketMongoId}/export-anonymous?token=${token}`, {
+    responseType: 'text',
+  });
