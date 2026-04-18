@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import ResourceList from '../components/ResourceList';
+import QuizWidget from '../components/QuizWidget';
 import './HomePage.css';
 
 export default function HomePage() {
@@ -71,6 +72,13 @@ export default function HomePage() {
         </div>
         <ResourceList />
       </section>
+
+      {/* QUIZ SECTION */}
+      <section className="quiz-section" style={{ padding: '2rem', marginTop: '2rem' }}>
+        <h2>Quick Self-Assessment Quiz</h2>
+        <QuizWidget />
+      </section>
+
     </div>
   );
 }

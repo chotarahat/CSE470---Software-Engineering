@@ -22,6 +22,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/resources', require('./routes/resourceRoutes'));
+app.use('/api/quiz', require('./routes/quizRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'Server running' }));
@@ -37,3 +38,15 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+
+
+
+
+
+
+
+
+
+const quizRoutes = require('./routes/quizRoutes');
+app.use('/api/quiz', quizRoutes);

@@ -90,3 +90,83 @@
 
 /* Resources section */
 .resources-section { margin: 3rem 0; }
+
+
+/* Quiz section */
+.quiz-section {
+  margin: 3rem 0;
+}
+
+.quiz-section h2 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Quiz container styling (same card system as steps/features) */
+.quiz-section > div {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+/* Questions */
+.quiz-section p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+/* Options layout */
+.quiz-section label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 1rem 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* Radio button */
+.quiz-section input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+/* Submit button */
+.quiz-section button {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.quiz-section button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Result section */
+.quiz-section h3 {
+  margin-top: 1.5rem;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.quiz-section h4 {
+  margin-top: 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.quiz-section p strong {
+  color: var(--accent);
+}
