@@ -70,7 +70,7 @@ ticketSchema.statics.VALID_TRANSITIONS = {
   'in-progress':['responded', 'resolved', 'closed'],
   responded:    ['in-progress', 'resolved', 'closed'],
   resolved:     ['closed', 'in-progress'],
-  closed:       [],   // terminal — admin can force reopen via direct status set
+  closed:       [],  
 };
 
 
