@@ -22,7 +22,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/resources', require('./routes/resourceRoutes'));
-
+app.use('/api/mood', require('./routes/moodRoutes'));
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'Server running' }));
 

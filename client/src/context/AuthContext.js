@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const res = await apiLogin({ email, password });
     localStorage.setItem('token', res.data.token);
+    sessionStorage.removeItem('ventify_session_logged');
     setUser(res.data);
     return res.data;
   };
