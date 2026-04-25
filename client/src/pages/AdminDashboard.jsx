@@ -5,6 +5,7 @@ import {
   getResources, createResource, deleteResource,
   getCategories, createCategory,
 } from '../services/api';
+import GenerateReport from '../components/GenerateReport';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -48,6 +49,9 @@ function OverviewTab() {
   return (
     <div className="overview-tab">
 
+      {/* ── Generate Report button ── */}
+      <GenerateReport />
+
       {/* ── Headline stats ── */}
       <div className="stats-grid">
         {[
@@ -65,6 +69,26 @@ function OverviewTab() {
           </div>
         ))}
       </div>
+
+      {/* ── Crisis summary strip ── */}
+      {(data.totalCrisis > 0) && (
+        <div className="admin-crisis-strip">
+          <span style={{ fontSize: '1.1rem' }}>🚨</span>
+          <div>
+            <strong>{data.totalCrisis} crisis ticket{data.totalCrisis !== 1 ? 's' : ''} total</strong>
+            {data.unacknowledgedCrisis > 0 && (
+              <span className="crisis-unacked-pill">
+                {data.unacknowledgedCrisis} unacknowledged
+              </span>
+            )}
+            {data.unacknowledgedCrisis === 0 && (
+              <span style={{ color: 'var(--green)', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
+                ✓ All acknowledged
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── KPI row ── */}
       <div className="kpi-row">
@@ -295,7 +319,7 @@ function TicketsTab() {
         <table>
           <thead>
             <tr>
-              <th>Ticket ID</th><th>Category</th><th>Priority</th>
+              <th>Ticket ID</th><th>Crisis</th><th>Category</th><th>Priority</th>
               <th>Status</th><th>Counselor</th><th>Submitted</th><th>Change Status</th>
             </tr>
           </thead>
@@ -305,6 +329,14 @@ function TicketsTab() {
               : filtered.map(t => (
                 <tr key={t._id}>
                   <td><code style={{ color: 'var(--accent)', fontSize: '0.78rem' }}>{t.ticketId}</code></td>
+                  <td>
+                    {t.isCrisis ? (
+                      <span title={t.crisisAcknowledged ? 'Acknowledged' : 'Unacknowledged'}
+                        style={{ fontSize: '1rem' }}>
+                        {t.crisisAcknowledged ? '✓🚨' : '🚨'}
+                      </span>
+                    ) : <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>—</span>}
+                  </td>
                   <td style={{ fontSize: '0.82rem' }}>{t.category?.name || '—'}</td>
                   <td><span className={`badge badge-${t.priority}`}>{t.priority}</span></td>
                   <td><span className={`badge ${statusBadge(t.status)}`}>{t.status}</span></td>
