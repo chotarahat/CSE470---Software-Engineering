@@ -65,3 +65,4 @@ export const exportTranscriptAnonymous = (ticketMongoId, token) =>
 // Admin only — download full system report as .txt file
 export const generateReport = () =>
   API.get('/reports/generate', { responseType: 'text' });
+export default API;
