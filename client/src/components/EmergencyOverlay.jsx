@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 
 function EmergencyOverlay({ onClose }) {
 
-  // Optional: Prevent background scrolling when overlay is open
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {

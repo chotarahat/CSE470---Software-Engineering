@@ -14,7 +14,10 @@ API.interceptors.request.use((config) => {
 // ── Auth ──────────────────────────────────────────────
 export const register = (data) => API.post('/users/register', data);
 export const login = (data) => API.post('/users/login', data);
+export const verifyMFA=(data)=> API.post('/users/verify-mfa',data);
 export const getProfile = () => API.get('/users/profile');
+export const generateMFA=() => API.post('/users/generate-mfa');
+export const enableMFA = (data) => API.post('/users/enable-mfa',data);
 
 // ── Counselor management (admin) ─────────────────────
 export const getCounselors = () => API.get('/users/counselors');

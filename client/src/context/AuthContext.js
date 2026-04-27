@@ -21,7 +21,12 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const res = await apiLogin({ email, password });
+    if(res.data.mfaRequired){
+      return res.data;
+    }
     localStorage.setItem('token', res.data.token);
+    sessionStorage.removeItem('ventify_session_logged');
+
     setUser(res.data);
     return res.data;
   };
@@ -39,7 +44,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, setUser, login, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

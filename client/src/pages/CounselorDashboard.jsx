@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getTickets, updateTicketStatus, toggleAvailability } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import TicketChat from '../components/TicketChat';
+import MfaSetup from '../components/MfaSetup';
 import './CounselorDashboard.css';
 
 export default function CounselorDashboard() {
@@ -185,6 +186,16 @@ export default function CounselorDashboard() {
         </div>
 
       </div>
+
+      {/* ── BOTTOM PANEL: SECURITY SETTINGS (MFA SETUP) ── */}
+      <section className="security-section" style={{ marginTop: '4rem', paddingBottom: '2rem' }}>
+        <hr style={{ marginBottom: '2rem', borderColor: 'var(--border)' }} />
+        <div style={{ padding: '0 1rem' }}>
+          <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Account Security Settings</h2>
+          <MfaSetup />
+        </div>
+      </section>
+
     </div>
   );
 }
