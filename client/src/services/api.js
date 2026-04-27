@@ -51,7 +51,6 @@ export const deleteResource = (id) => API.delete(`/resources/${id}`);
 export const getCategories = () => API.get('/resources/categories');
 export const createCategory = (data) => API.post('/resources/categories', data);
 
-export default API;
 
 // ── Transcripts ───────────────────────────────────────────
 // Counselor / admin export — JWT required
