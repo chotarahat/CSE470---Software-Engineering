@@ -1,9 +1,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import ResourceList from '../components/ResourceList';
+import MoodTracker from '../components/MoodTracker'; // 🚀 Imported the new tracker!
 import './HomePage.css';
 
 export default function HomePage() {
+
+  // 🚀 The Bulletproof Scroll Function for the Resource Card
+  const handleResourceClick = (e) => {
+    e.preventDefault(); 
+    e.stopPropagation();
+    
+    const target = document.getElementById('resources');
+    if (target) {
+      const yOffset = -70; // Adjusts for your fixed navbar
+      const y = target.getBoundingClientRect().top + window.scrollY + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="home">
       {/* Hero */}
@@ -21,11 +36,14 @@ export default function HomePage() {
           <Link to="/student">
             <button className="btn btn-primary hero-btn">Get Support Now</button>
           </Link>
-          <a href="#resources">
-            <button className="btn btn-secondary hero-btn">Browse Resources</button>
-          </a>
+          <button onClick={handleResourceClick} className="btn btn-secondary hero-btn">
+            Browse Resources
+          </button>
         </div>
       </section>
+
+      {/* 🚀 🚀 The Popup Mood Tracker */}
+      <MoodTracker />
 
       {/* Features */}
       <section className="features">
@@ -34,12 +52,28 @@ export default function HomePage() {
             { icon: '🎭', title: 'Fully Anonymous', desc: 'No login required. Your identity is never linked to your request.' },
             { icon: '🩺', title: 'Real Counselors', desc: 'Trained professionals review and respond to every ticket.' },
             { icon: '🔐', title: 'Secure & Private', desc: 'JWT-based auth, bcrypt encryption, and role-based access control.' },
-            { icon: '📚', title: 'Resource Library', desc: 'Curated self-help articles and guides available to everyone.' },
+            { icon: '📚', title: 'Resource Library', desc: 'Curated self-help articles and guides available to everyone.', isLink: true },
           ].map((f) => (
-            <div key={f.title} className="feature-card card">
+            <div 
+              key={f.title} 
+              className={`feature-card card ${f.isLink ? 'resource-clickable-card' : ''}`}
+              onClick={f.isLink ? handleResourceClick : undefined}
+              style={f.isLink ? { 
+                cursor: 'pointer', 
+                border: '1px solid var(--accent)', 
+                backgroundColor: 'var(--bg-hover)' 
+              } : {}}
+            >
               <div className="feature-icon">{f.icon}</div>
               <h3>{f.title}</h3>
               <p>{f.desc}</p>
+              
+              {/* Visual Indicator for the clickable card */}
+              {f.isLink && (
+                <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 'bold' }}>
+                  Click to browse ↓
+                </div>
+              )}
             </div>
           ))}
         </div>

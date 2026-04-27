@@ -26,7 +26,6 @@ export const AuthProvider = ({ children }) => {
     }
     localStorage.setItem('token', res.data.token);
     sessionStorage.removeItem('ventify_session_logged');
-
     setUser(res.data);
     return res.data;
   };
