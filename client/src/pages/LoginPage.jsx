@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { verifyMFA } from '../services/api';
 import './LoginPage.css';
 
 export default function LoginPage() {
-  const { user, login, register } = useAuth();
+  const { user, login, register,setUser } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [mfaStep,setMfaStep]=useState(false);
+  const [mfaToken,setMfaToken]=useState('');
+  const [tempUserId,setTempUserId]=useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,20 +25,67 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      let u;
       if (mode === 'login') {
-        u = await login(form.email, form.password);
+        const res=await login(form.email,form.password);
+        if (res.mfaRequired){
+          setMfaStep(true);
+          setTempUserId(res.userId);
+          setLoading(false);
+          return;
+        }
       } else {
-        u = await register(form.name, form.email, form.password);
+          await register(form.name, form.email, form.password);
       }
-      const dest = u.role === 'admin' ? '/admin' : u.role === 'counselor' ? '/counselor' : '/student';
-      navigate(dest);
+      // const dest = u.role === 'admin' ? '/admin' : u.role === 'counselor' ? '/counselor' : '/student';
+      navigate('/student');
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
-    } finally {
+      setError(err.response?.data?.message || 'Authentication Failed');
       setLoading(false);
     }
   };
+
+  const handleMfaSubmit = async (e) =>{
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try{
+      const res=await verifyMFA({userId:tempUserId,token:mfaToken});
+      localStorage.setItem('token',res.data.token);
+      setUser(res.data);
+      const dest = res.data.role==='admin' ? '/admin':'/counselor';
+      navigate(dest);
+    }catch(err){
+      setError(err.response?.data?.message|| 'Invalid 2FA code');
+      setLoading(false);
+    }
+  };
+  if(mfaStep){
+    return (
+      <div className="page login-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <form className="card" onSubmit={handleMfaSubmit} style={{ maxWidth: '400px', width: '100%' }}>
+          <h2>Security Verification</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+            Please enter the 6-digit code from your Authenticator app.
+          </p>
+          {error && <div className="alert alert-error">{error}</div>}
+          <div className="form-group">
+            <input
+              type="text"
+              placeholder="000000"
+              maxLength="6"
+              value={mfaToken}
+              onChange={(e) => setMfaToken(e.target.value)}
+              required
+              style={{ fontSize: '2rem', textAlign: 'center', letterSpacing: '0.5rem' }}
+            />
+          </div>
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+            {loading ? 'Verifying...' : 'Verify Login'}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="login-page">

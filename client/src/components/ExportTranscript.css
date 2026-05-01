@@ -1,0 +1,170 @@
+.export-transcript {
+  margin-top: 1rem;
+}
+
+/* Export button */
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Mini spinner inside button */
+.export-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Key reveal panel */
+.export-key-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--yellow);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-top: 1rem;
+  animation: slideDown 0.3s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.export-key-header {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+.export-key-icon { font-size: 1.4rem; flex-shrink: 0; }
+.export-key-header strong {
+  display: block;
+  color: var(--yellow);
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+.export-key-header p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+.export-key-header em {
+  color: var(--yellow);
+  font-style: normal;
+  font-weight: 600;
+}
+.export-filename {
+  font-size: 0.75rem;
+  background: var(--bg-card);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+/* Key display box */
+.export-key-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--yellow-dim);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.export-key-text {
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  color: var(--yellow);
+  word-break: break-all;
+  flex: 1;
+  user-select: all;
+  line-height: 1.6;
+}
+.copy-btn {
+  background: var(--yellow-dim);
+  color: var(--yellow);
+  border: 1px solid var(--yellow);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+.copy-btn.copied {
+  background: var(--green-dim);
+  color: var(--green);
+  border-color: var(--green);
+}
+
+/* How-to instructions */
+.export-how-to {
+  margin-bottom: 1rem;
+}
+.export-how-to summary {
+  font-size: 0.8rem;
+  color: var(--accent);
+  cursor: pointer;
+  user-select: none;
+  padding: 0.3rem 0;
+}
+.export-how-to-body {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+.export-how-to-body p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+.export-how-to-body strong { color: var(--text-primary); }
+.export-how-to-body pre {
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  color: var(--green);
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+.export-how-to-body code {
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  background: var(--bg-surface);
+  color: var(--accent);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+/* Warning strip */
+.export-key-warning {
+  font-size: 0.78rem;
+  color: var(--yellow);
+  background: var(--yellow-dim);
+  border: 1px solid var(--yellow);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Done notice after dismissal */
+.export-done-notice {
+  font-size: 0.8rem;
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid #1a6e40;
+  border-radius: var(--radius);
+  padding: 0.5rem 0.85rem;
+  margin-top: 0.75rem;
+}

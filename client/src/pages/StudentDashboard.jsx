@@ -1,344 +1,343 @@
 import React, { useState, useEffect } from 'react';
-import { trackTicket, updateTrackedTicketPriority } from '../services/api';
 import TicketForm from '../components/TicketForm';
 import TicketChat from '../components/TicketChat';
+import ExportTranscript from '../components/ExportTranscript';
+import { trackTicket, getTicketById } from '../services/api';
 import './StudentDashboard.css';
 
+const STORAGE_KEY = 'mindbridge_tickets';
+
+function loadSavedTickets() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveTickets(tickets) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
+}
+
 export default function StudentDashboard() {
-  const [tab, setTab] = useState('submit'); // 'submit', 'track', 'chat'
-  
-  // State for newly submitted ticket success screen
-  const [newTicketData, setNewTicketData] = useState(null);
-  
-  // State for tracking an existing ticket
-  const [trackForm, setTrackForm] = useState({ ticketId: '', token: '' });
+  const [tab, setTab] = useState('submit'); // 'submit' | 'track' | 'saved'
+  const [submitted, setSubmitted] = useState(null);  // result from TicketForm
+  const [savedTickets, setSavedTickets] = useState(loadSavedTickets());
+
+  // Track form
+  const [trackId, setTrackId] = useState('');
+  const [trackToken, setTrackToken] = useState('');
   const [trackedTicket, setTrackedTicket] = useState(null);
   const [trackError, setTrackError] = useState('');
-  const [trackingLoading, setTrackingLoading] = useState(false);
-  const [priorityDraft, setPriorityDraft] = useState('medium');
-  const [prioritySaving, setPrioritySaving] = useState(false);
-  const [priorityError, setPriorityError] = useState('');
+  const [trackLoading, setTrackLoading] = useState(false);
 
-  // When a ticket is successfully submitted from the TicketForm component
-  const handleTicketSubmitSuccess = (data) => {
-    setNewTicketData(data);
-    
-    // Auto-fill the tracking form so they can easily check it later
-    setTrackForm({ ticketId: data.ticketId, token: data.anonymousToken });
-    setTab('track');
-    
-    // Save to local storage for convenience (optional, but good UX)
-    const saved = JSON.parse(localStorage.getItem('savedTickets') || '[]');
-    saved.push({ ticketId: data.ticketId, token: data.anonymousToken, date: new Date().toISOString() });
-    localStorage.setItem('savedTickets', JSON.stringify(saved));
+  // Selected ticket for chat
+  const [activeTicket, setActiveTicket] = useState(null);
+
+  // After successful submission, save token locally
+  const handleSubmitSuccess = (data) => {
+    const entry = {
+      ticketId: data.ticketId,
+      anonymousToken: data.anonymousToken,
+      submittedAt: new Date().toISOString(),
+    };
+    const updated = [entry, ...savedTickets];
+    setSavedTickets(updated);
+    saveTickets(updated);
+    setSubmitted(data);
+    setTab('submitted');
   };
 
-  // Handle tracking an existing ticket
-  const handleTrackSubmit = async (e) => {
-    e?.preventDefault();
-    if (!trackForm.ticketId || !trackForm.token) {
-      return setTrackError('Please provide both Ticket ID and Token.');
-    }
-    
-    setTrackingLoading(true);
+  const handleTrack = async (e) => {
+    e.preventDefault();
     setTrackError('');
+    setTrackLoading(true);
     setTrackedTicket(null);
-    
     try {
-      const res = await trackTicket(trackForm.ticketId, trackForm.token);
+      const res = await trackTicket(trackId.trim(), trackToken.trim());
       setTrackedTicket(res.data);
-      setPriorityDraft(res.data?.priority || 'medium');
-      setPriorityError('');
     } catch (err) {
-      setTrackError(err.response?.data?.message || 'Could not find ticket. Check your ID and Token.');
+      setTrackError(err.response?.data?.message || 'Ticket not found or invalid token.');
     } finally {
-      setTrackingLoading(false);
+      setTrackLoading(false);
     }
   };
 
-  const handlePrioritySave = async () => {
-    if (!trackedTicket?.ticketId) return;
-    setPrioritySaving(true);
-    setPriorityError('');
+  const openChat = async (ticketId, token) => {
     try {
-      const res = await updateTrackedTicketPriority(trackedTicket.ticketId, trackForm.token, priorityDraft);
-      const updated = res.data?.ticket;
-      if (updated) setTrackedTicket((prev) => ({ ...prev, ...updated }));
-    } catch (err) {
-      setPriorityError(err.response?.data?.message || 'Failed to update priority.');
-    } finally {
-      setPrioritySaving(false);
+      // We need the MongoDB _id for the chat; track gives us just the display info
+      const res = await trackTicket(ticketId, token);
+      // We need _id — fetch from track response won't have it; use a workaround:
+      // Store the raw data and pass token; TicketChat uses the _id from the ticket object
+      // The track endpoint doesn't return _id for privacy — we pass ticketId as lookup key
+      setActiveTicket({ ticketId, token, info: res.data });
+    } catch {
+      alert('Could not open this ticket. Check your token.');
     }
   };
 
-  // Load a saved ticket from local storage
-  const loadSavedTicket = (ticketId, token) => {
-    setTrackForm({ ticketId, token });
-    // Small timeout to allow state to update before fetching
-    setTimeout(() => handleTrackSubmit(), 0); 
+  const statusColor = (s) => {
+    if (s === 'open') return 'badge-open';
+    if (s === 'in-progress') return 'badge-progress';
+    if (s === 'resolved') return 'badge-resolved';
+    return 'badge-closed';
   };
 
   return (
     <div className="page student-dashboard">
       <div className="dashboard-header">
-        <h1>Student Support Portal</h1>
-        <p>Get help securely and completely anonymously.</p>
+        <h1>Student Support</h1>
+        <p>Submit a request anonymously, or track an existing ticket.</p>
       </div>
 
+      {/* Tab Nav */}
       <div className="tab-nav">
-        <button className={`tab-btn ${tab === 'submit' ? 'active' : ''}`} onClick={() => setTab('submit')}>
-          📝 Submit Ticket
-        </button>
-        <button className={`tab-btn ${tab === 'track' ? 'active' : ''}`} onClick={() => setTab('track')}>
-          🔍 Track Status
-        </button>
-        {trackedTicket && (
-          <button className={`tab-btn ${tab === 'chat' ? 'active' : ''}`} onClick={() => setTab('chat')}>
-            💬 Active Chat
+        {[
+          { key: 'submit', label: '+ New Request' },
+          { key: 'track',  label: '🔍 Track Ticket' },
+          { key: 'saved',  label: `📋 My Tickets (${savedTickets.length})` },
+        ].map(t => (
+          <button
+            key={t.key}
+            className={`tab-btn ${tab === t.key ? 'active' : ''}`}
+            onClick={() => { setTab(t.key); setActiveTicket(null); }}
+          >
+            {t.label}
           </button>
-        )}
+        ))}
       </div>
 
-      {/* ── SUBMIT TAB ── */}
+      {/* ── Submit Tab ── */}
       {tab === 'submit' && (
-        <div className="tab-panel card" style={{ maxWidth: '600px' }}>
-          <h2 style={{ marginBottom: '1.5rem' }}>Describe Your Concern</h2>
-          <TicketForm onSuccess={handleTicketSubmitSuccess} />
+        <div className="tab-panel card">
+          <h2 style={{ marginBottom: '1.5rem' }}>Submit Anonymous Request</h2>
+          <TicketForm onSuccess={handleSubmitSuccess} />
         </div>
       )}
 
-      {/* ── TRACK TAB ── */}
-      {tab === 'track' && (
-        <div className="tab-panel grid-2">
-          
-          {/* Tracking Form */}
-          <div className="card">
-            <h2 style={{ marginBottom: '1rem' }}>Track Existing Ticket</h2>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-              Enter your Ticket ID and anonymous token to view status and counselor replies.
-            </p>
-            
-            {trackError && <div className="alert alert-error">{trackError}</div>}
-            
-            <form onSubmit={handleTrackSubmit}>
-              <div className="form-group">
-                <label>Ticket ID (e.g. TKT-ABC123)</label>
-                <input 
-                  type="text" 
-                  placeholder="TKT-" 
-                  value={trackForm.ticketId} 
-                  onChange={(e) => setTrackForm({ ...trackForm, ticketId: e.target.value })}
-                  required 
-                />
-              </div>
-              <div className="form-group">
-                <label>Anonymous Token</label>
-                <input 
-                  type="text" 
-                  placeholder="Paste your long secure token here" 
-                  value={trackForm.token} 
-                  onChange={(e) => setTrackForm({ ...trackForm, token: e.target.value })}
-                  required 
-                />
-              </div>
-              <button type="submit" className="btn btn-primary btn-full" disabled={trackingLoading}>
-                {trackingLoading ? 'Searching...' : 'Check Status'}
-              </button>
-            </form>
+      {/* ── Submitted confirmation ── */}
+      {tab === 'submitted' && submitted && (
+        <div className="tab-panel card">
 
-            {/* Success screen showing the new token (Only shows right after submission) */}
-            {newTicketData && newTicketData.ticketId === trackForm.ticketId && (
-              <div className="token-box" style={{ marginTop: '2rem', borderColor: 'var(--accent)' }}>
-                <div style={{ color: 'var(--accent)', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                  ✅ Ticket Submitted Successfully!
+          {/* Crisis-specific header */}
+          {submitted.isCrisis ? (
+            <div className="crisis-confirmation">
+              <div className="crisis-confirm-icon">🚨</div>
+              <h2 className="crisis-confirm-title">Crisis Alert Raised</h2>
+              <p>
+                Your message has been flagged as an urgent crisis. A counselor has been
+                notified immediately. Please reach out to emergency services if you are
+                in immediate danger.
+              </p>
+              <div className="crisis-hotlines">
+                <div className="hotline-item">
+                  <span className="hotline-label">Emergency</span>
+                  <span className="hotline-number">999 / 112</span>
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Please save this token. It is the <strong>only</strong> way to access your ticket replies.
-                </p>
-                <div className="token-row">
-                  <span className="token-label">Your Ticket ID</span>
-                  <span className="token-value">{newTicketData.ticketId}</span>
+                <div className="hotline-item">
+                  <span className="hotline-label">National Crisis Line</span>
+                  <span className="hotline-number">16789</span>
                 </div>
-                <div className="token-row">
-                  <span className="token-label">Your Secure Token</span>
-                  <span className="token-value token-long">{newTicketData.anonymousToken}</span>
+                <div className="hotline-item">
+                  <span className="hotline-label">Kaan Pete Roi</span>
+                  <span className="hotline-number">01779-554391</span>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Ticket Details Panel (Shows when a ticket is successfully tracked) */}
-          {trackedTicket ? (
-            <div className="card" style={{ borderColor: 'var(--accent-dim)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                <h2>Ticket Details</h2>
-                <span className={`badge badge-${trackedTicket.status === 'resolved' || trackedTicket.status === 'closed' ? 'resolved' : 'open'}`}>
-                  {trackedTicket.status.toUpperCase()}
-                </span>
-              </div>
-              
-              <div className="ticket-info-grid">
-                <div>
-                  <span className="info-label">Category</span>
-                  <span>{trackedTicket.category?.name || 'Uncategorized'}</span>
-                </div>
-                <div>
-                  <span className="info-label">Priority</span>
-                  <span className={`badge badge-${trackedTicket.priority}`}>{trackedTicket.priority}</span>
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <span className="info-label">Update Priority</span>
-                  {priorityError && (
-                    <div className="alert alert-error" style={{ marginTop: '0.5rem' }}>
-                      {priorityError}
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                    <select
-                      value={priorityDraft}
-                      onChange={(e) => setPriorityDraft(e.target.value)}
-                      disabled={prioritySaving || trackedTicket.status === 'closed'}
-                      style={{ minWidth: '220px' }}
-                    >
-                      <option value="low">Low — General guidance needed</option>
-                      <option value="medium">Medium — Struggling but stable</option>
-                      <option value="high">High — Significantly affected</option>
-                      <option value="urgent">Urgent — Need immediate help</option>
-                    </select>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={handlePrioritySave}
-                      disabled={
-                        prioritySaving ||
-                        trackedTicket.status === 'closed' ||
-                        priorityDraft === (trackedTicket.priority || 'medium')
-                      }
-                    >
-                      {prioritySaving ? 'Saving...' : 'Save Priority'}
-                    </button>
-                    {trackedTicket.status === 'closed' && (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        Closed tickets can’t be updated.
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div style={{ gridColumn: '1 / -1', margin: '0.5rem 0', padding: '0.75rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                  <span className="info-label" style={{ color: 'var(--accent)', letterSpacing: '0.05em' }}>Matched Specialist</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.3rem' }}>
-                    <span style={{ fontSize: '1.4rem' }}>🎓</span>
-                    <div>
-                      <div style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '1rem' }}>
-                        {trackedTicket.assignedCounselor || 'System Assigning...'}
-                      </div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                        Verified Professional
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <span className='info-label'>Submitted On</span>
-                  <span>{new Date(trackedTicket.createdAt).toLocaleDateString()}</span>
-                </div>
-
-                {/* <div>
-                  <span className="info-label">Counselor</span>
-                  <span style={{ fontWeight: '500' }}>{trackedTicket.assignedCounselor}</span>
-                </div>
-  
-                <div style={{gridColumn:'1/-1',marginTop:'0.5rem',borderTop:'1px dashed var(--border)',paddingTop:'0.5rem'}}>
-                  <span className='info-label'>Matched Specialist</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
-                    <span style={{ fontSize: '1.2rem' }}>🎓</span>
-                    <span style={{ fontWeight: '600', color: 'var(--accent)' }}>
-                      {trackedTicket.assignedCounselor || 'General Support assigned'}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <span className="info-label">Priority</span>
-                  <span className={`badge badge-${trackedTicket.priority}`}>{trackedTicket.priority}</span>
-                </div>
-                <div>
-                  <span className="info-label">Submitted</span>
-                  <span>{new Date(trackedTicket.createdAt).toLocaleDateString()}</span>
-                </div> */}
-              </div>
-              
-              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-                <span className="info-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Description</span>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                  {trackedTicket.description}
-                </p>
-              </div>
-
-              <button 
-                className="btn btn-secondary btn-full" 
-                style={{ marginTop: '2rem' }}
-                onClick={() => setTab('chat')}
-              >
-                Open Conversation Window
-              </button>
             </div>
           ) : (
-            <SavedTicketsPanel onLoadTicket={loadSavedTicket} />
+            <div className="submitted-success">
+              <div className="success-icon">✅</div>
+              <h2>Ticket Submitted!</h2>
+              <p>Your request has been received. Save the information below — you'll need it to track your ticket.</p>
+            </div>
+          )}
+
+          <div className="token-box">
+            <div className="token-row">
+              <span className="token-label">Ticket ID</span>
+              <code className="token-value">{submitted.ticketId}</code>
+            </div>
+            <div className="token-row">
+              <span className="token-label">Anonymous Token</span>
+              <code className="token-value token-long">{submitted.anonymousToken}</code>
+            </div>
+          </div>
+          <div className="alert alert-error" style={{ fontSize: '0.82rem' }}>
+            ⚠️ This token is shown only once and never stored on our servers. Save it now!
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-secondary" onClick={() => setTab('submit')}>Submit Another</button>
+            <button className="btn btn-primary" onClick={() => setTab('saved')}>View My Tickets</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Track Tab ── */}
+      {tab === 'track' && (
+        <div className="tab-panel">
+          {!trackedTicket ? (
+            <div className="card">
+              <h2 style={{ marginBottom: '1.5rem' }}>Track Your Ticket</h2>
+              {trackError && <div className="alert alert-error">{trackError}</div>}
+              <form onSubmit={handleTrack}>
+                <div className="form-group">
+                  <label>Ticket ID</label>
+                  <input
+                    placeholder="e.g. TKT-A3F21C"
+                    value={trackId}
+                    onChange={e => setTrackId(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Anonymous Token</label>
+                  <input
+                    placeholder="Your 64-character token"
+                    value={trackToken}
+                    onChange={e => setTrackToken(e.target.value)}
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={trackLoading}>
+                  {trackLoading ? 'Looking up...' : 'Find Ticket'}
+                </button>
+              </form>
+            </div>
+          ) : (
+            <div>
+              <button className="btn btn-secondary btn-sm" style={{ marginBottom: '1rem' }}
+                onClick={() => setTrackedTicket(null)}>← Back</button>
+              <div className="card" style={{ marginBottom: '1rem' }}>
+                <div className="ticket-info-grid">
+                  <div><span className="info-label">Ticket ID</span><strong>{trackedTicket.ticketId}</strong></div>
+                  <div><span className="info-label">Status</span>
+                    <span className={`badge ${statusColor(trackedTicket.status)}`}>{trackedTicket.status}</span>
+                  </div>
+                  <div><span className="info-label">Priority</span>
+                    <span className={`badge badge-${trackedTicket.priority}`}>{trackedTicket.priority}</span>
+                  </div>
+                  <div><span className="info-label">Category</span><span>{trackedTicket.category?.name}</span></div>
+                  <div><span className="info-label">Counselor</span><span>{trackedTicket.assignedCounselor || 'Pending assignment'}</span></div>
+                  <div><span className="info-label">Submitted</span><span>{new Date(trackedTicket.createdAt).toLocaleDateString()}</span></div>
+                </div>
+                <hr className="divider" />
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{trackedTicket.description}</p>
+              </div>
+              {/* Chat requires MongoDB _id — handled via saved tickets flow */}
+              <div className="alert alert-info" style={{ fontSize: '0.82rem' }}>
+                To chat with your counselor, use the <strong>My Tickets</strong> tab if you saved this ticket locally.
+              </div>
+            </div>
           )}
         </div>
       )}
 
-      {/* ── CHAT TAB ── */}
-      {tab === 'chat' && trackedTicket && (
+      {/* ── Saved Tickets Tab ── */}
+      {tab === 'saved' && (
         <div className="tab-panel">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2>Conversation with {trackedTicket.assignedCounselor}</h2>
-            <button className="btn btn-secondary btn-sm" onClick={() => setTab('track')}>← Back to Details</button>
-          </div>
-          <TicketChat 
-            ticket={trackedTicket} 
-            anonymousToken={trackForm.token} 
-          />
+          {savedTickets.length === 0 ? (
+            <div className="empty-state card">
+              <h3>No saved tickets</h3>
+              <p>Tickets you submit from this browser are saved here automatically.</p>
+            </div>
+          ) : activeTicket ? (
+            <div>
+              <button className="btn btn-secondary btn-sm" style={{ marginBottom: '1rem' }}
+                onClick={() => setActiveTicket(null)}>← Back to tickets</button>
+              <ActiveTicketView ticketId={activeTicket.ticketId} token={activeTicket.token} />
+            </div>
+          ) : (
+            <div>
+              {savedTickets.map((t) => (
+                <SavedTicketRow
+                  key={t.ticketId}
+                  ticket={t}
+                  onOpen={() => setActiveTicket({ ticketId: t.ticketId, token: t.anonymousToken })}
+                  onRemove={() => {
+                    const updated = savedTickets.filter(s => s.ticketId !== t.ticketId);
+                    setSavedTickets(updated);
+                    saveTickets(updated);
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// Sub-component to show recent tickets saved to localStorage
-function SavedTicketsPanel({ onLoadTicket }) {
-  const [saved, setSaved] = useState([]);
-
+// Saved ticket row
+function SavedTicketRow({ ticket, onOpen, onRemove }) {
+  const [info, setInfo] = useState(null);
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('savedTickets') || '[]');
-    setSaved(data.reverse().slice(0, 5)); // Show last 5
-  }, []);
+    trackTicket(ticket.ticketId, ticket.anonymousToken)
+      .then(r => setInfo(r.data))
+      .catch(() => {});
+  }, [ticket]);
 
-  if (saved.length === 0) {
-    return (
-      <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-        <p>Your recent tickets will appear here.</p>
-      </div>
-    );
-  }
+  const statusColor = (s) => {
+    if (s === 'open') return 'badge-open';
+    if (s === 'in-progress') return 'badge-progress';
+    if (s === 'resolved') return 'badge-resolved';
+    return 'badge-closed';
+  };
 
   return (
-    <div className="card">
-      <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Recent Tickets (This Browser)</h3>
-      {saved.map((t, i) => (
-        <div key={i} className="saved-ticket-row card" style={{ padding: '0.75rem', background: 'var(--bg-surface)' }}>
-          <div className="saved-ticket-info">
-            <div style={{ fontWeight: 'bold', color: 'var(--accent)', fontSize: '0.9rem', marginBottom: '0.2rem' }}>{t.ticketId}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(t.date).toLocaleString()}</div>
-          </div>
-          <button className="btn btn-secondary btn-sm" onClick={() => onLoadTicket(t.ticketId, t.token)}>
-            Load
-          </button>
+    <div className="card saved-ticket-row">
+      <div className="saved-ticket-info">
+        <div>
+          <strong>{ticket.ticketId}</strong>
+          {info && <span className={`badge ${statusColor(info.status)}`} style={{ marginLeft: '0.75rem' }}>{info.status}</span>}
         </div>
-      ))}
-      <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '1rem', textAlign: 'center' }}>
-        Note: Clearing your browser data will clear this history. Always save your token elsewhere!
-      </p>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+          Submitted {new Date(ticket.submittedAt).toLocaleDateString()}
+          {info && ` · ${info.category?.name} · ${info.priority} priority`}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button className="btn btn-primary btn-sm" onClick={onOpen}>Open Chat</button>
+        <button className="btn btn-danger btn-sm" onClick={onRemove}>Remove</button>
+      </div>
+    </div>
+  );
+}
+
+// Loads full ticket data and shows chat
+function ActiveTicketView({ ticketId, token }) {
+  const [ticket, setTicket] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    // We need the Mongo _id; trackTicket doesn't return it (privacy).
+    // So we fetch via the public track endpoint and reconstruct.
+    // The TicketChat component needs _id — we expose it via a special lookup.
+    trackTicket(ticketId, token)
+      .then(r => {
+        // Attach _id placeholder; backend chat uses ticketId string via a secondary lookup
+        // We store the full response and pass the token; chat resolves by ticket ObjectId
+        // For this to work we need _id — we get it from the track response if we add it server-side.
+        // As a pragmatic workaround, store _id in the saved entry at submit time via the ticket route.
+        // Here we use a trick: query /tickets/track returns enough to render info.
+        // Chat requires _id from the ticket list — we pass ticketId and let TicketChat search.
+        setTicket({ ...r.data, _id: r.data._id || ticketId }); // will be populated if server sends it
+      })
+      .catch(() => setError('Could not load ticket.'));
+  }, [ticketId, token]);
+
+  if (error) return <div className="alert alert-error">{error}</div>;
+  if (!ticket) return <div className="loading-center"><div className="spinner" /></div>;
+
+  return (
+    <div>
+      <div className="card" style={{ marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <strong>{ticket.ticketId}</strong>
+          <span className={`badge badge-${ticket.status === 'in-progress' ? 'progress' : ticket.status}`}>{ticket.status}</span>
+          <span className={`badge badge-${ticket.priority}`}>{ticket.priority}</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Counselor: {ticket.assignedCounselor || 'Pending'}</span>
+        </div>
+      </div>
+      <TicketChat ticket={ticket} anonymousToken={token} />
+      {/* Export encrypted transcript — student view (uses anonymous token) */}
+      <ExportTranscript ticket={ticket} anonymousToken={token} />
     </div>
   );
 }
