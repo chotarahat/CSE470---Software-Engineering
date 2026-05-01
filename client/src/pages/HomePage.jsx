@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import ResourceList from '../components/ResourceList';
 import MoodTracker from '../components/MoodTracker'; // 🚀 Imported the new tracker!
 import './HomePage.css';
+import QuizWidget from '../components/QuizWidget';
 
 export default function HomePage() {
 
