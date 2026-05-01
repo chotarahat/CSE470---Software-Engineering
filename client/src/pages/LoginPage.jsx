@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { verifyMFA } from '../services/api';
+import { verifyMFA, resetPassword } from '../services/api';
 import './LoginPage.css';
 
 export default function LoginPage() {
   const { user, login, register,setUser } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forget'
   const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [mfaStep,setMfaStep]=useState(false);
   const [mfaToken,setMfaToken]=useState('');
   const [tempUserId,setTempUserId]=useState(null);
@@ -87,30 +88,50 @@ export default function LoginPage() {
     );
   }
 
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      // We will create this API endpoint next
+      await resetPassword(form.email, form.password); 
+      alert("Password changed successfully! You can now log in.");
+      setMode('login'); // Switch back to login view
+      setForm({ ...form, password: '' }); // Clear the password field
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to reset password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   return (
-    <div className="login-page">
-      <div className="login-card card">
-        <div className="login-header">
-          <span className="login-logo">🧠</span>
-          <h2>Ventify</h2>
-          <p>{mode === 'login' ? 'Sign in to your account' : 'Create a new account'}</p>
-        </div>
+    <div className="page login-page" style={{ display: 'flex', justifyContent: 'center', marginTop: '3rem' }}>
+      <div className="card" style={{ maxWidth: '400px', width: '100%', padding: '2rem' }}>
+        <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          {mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Reset Password'}
+        </h2>
+        
+        {error && <div className="alert alert-error" style={{ marginBottom: '1rem' }}>{error}</div>}
 
-        {error && <div className="alert alert-error">{error}</div>}
-
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={mode === 'forgot' ? handleResetPassword : handleSubmit}>
+          
+          {/* ── NAME FIELD (Only for Register) ── */}
           {mode === 'register' && (
             <div className="form-group">
               <label>Full Name</label>
               <input
                 type="text"
-                placeholder="Your name"
+                placeholder="Dr. Jane Doe or Anonymous"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
               />
             </div>
           )}
+
+          {/* ── EMAIL FIELD (For All Modes) ── */}
           <div className="form-group">
             <label>Email Address</label>
             <input
@@ -121,32 +142,86 @@ export default function LoginPage() {
               required
             />
           </div>
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
-            />
-          </div>
 
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-            {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+          {/* ── PASSWORD FIELD (For Login & Register) ── */}
+          {mode !== 'forgot' && (
+            <div className="form-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ margin: 0 }}>Password</label>
+                {mode === 'login' && (
+                  <button 
+                    type="button" 
+                    className="link-btn" 
+                    style={{ fontSize: '0.75rem' }} 
+                    onClick={() => { setMode('forgot'); setError(''); }}
+                  >
+                    Forgot Password?
+                  </button>
+                )}
+              </div>
+              
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required
+                  style={{ width: '100%', paddingRight: '2.5rem' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── NEW PASSWORD FIELD (Only for Forgot Password) ── */}
+          {mode === 'forgot' && (
+            <div className="form-group">
+              <label>New Password</label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your new password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required
+                  minLength="6"
+                  style={{ width: '100%', paddingRight: '2.5rem' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading} style={{ marginTop: '1rem' }}>
+            {loading ? 'Please wait...' : 
+             mode === 'login' ? 'Sign In' : 
+             mode === 'register' ? 'Create Account' : 
+             'Change Password'}
           </button>
         </form>
 
-        <div className="login-switch">
+        {/* ── BOTTOM SWITCH LINKS ── */}
+        <div className="login-switch" style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.85rem' }}>
           {mode === 'login' ? (
             <p>No account? <button className="link-btn" onClick={() => { setMode('register'); setError(''); }}>Register here</button></p>
-          ) : (
+          ) : mode === 'register' ? (
             <p>Already have one? <button className="link-btn" onClick={() => { setMode('login'); setError(''); }}>Sign in</button></p>
+          ) : (
+            <p>Remembered your password? <button className="link-btn" onClick={() => { setMode('login'); setError(''); }}>Back to Login</button></p>
           )}
-        </div>
-
-        <div className="alert alert-info" style={{ fontSize: '0.78rem', marginTop: '0.5rem' }}>
-          Students can submit tickets without signing in. Sign in only if you're a counselor or admin.
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import TicketChat from '../components/TicketChat';
 import ExportTranscript from '../components/ExportTranscript';
 import './CounselorDashboard.css';
+import MfaSetup from '../components/MfaSetup';
 
 export default function CounselorDashboard() {
   const { user } = useAuth();

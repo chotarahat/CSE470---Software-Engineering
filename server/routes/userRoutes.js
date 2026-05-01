@@ -9,7 +9,8 @@ const {
   toggleAvailability,
   generateMFA,
   enableMFA,
-  verifyMFALogin
+  verifyMFALogin,
+  resetPassword 
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
@@ -19,6 +20,7 @@ router.post('/enable-mfa',protect,enableMFA);
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/verify-mfa',verifyMFALogin);
+router.post('/reset-password', resetPassword);
 router.get('/profile', protect, getProfile);
 router.get('/counselors', protect, authorize('admin'), getAllCounselors);
 router.post('/counselors', protect, authorize('admin'), createCounselor);
