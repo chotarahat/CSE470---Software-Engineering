@@ -399,5 +399,33 @@ const updateTicketPriority = async (req, res) => {
   }
 };
 
+// GET /api/tickets/heatmap
+const getTicketHeatmap = async (req, res) => {
+  try {
+    const heatmapData = await Ticket.aggregate([
+      {
+        $group: {
+          _id: {
+            day: { $dayOfWeek: "$createdAt" },  // 1=Sunday
+            hour: { $hour: "$createdAt" }       // 0–23
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          day: "$_id.day",
+          hour: "$_id.hour",
+          count: 1
+        }
+      }
+    ]);
 
-module.exports = { createTicket, trackTicket, updateTrackedTicketPriority, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics, updateTicketPriority};
+    res.json(heatmapData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createTicket, trackTicket, updateTrackedTicketPriority, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics, updateTicketPriority, getTicketHeatmap};
