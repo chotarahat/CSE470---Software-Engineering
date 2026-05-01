@@ -6,7 +6,10 @@ const connectDB = require('./config/db');
 dotenv.config();
 
 const app = express();
+
+// Routes imports
 const auditRoutes = require('./routes/auditRoutes');
+const quizRoutes = require('./routes/quizRoutes'); // ✅ FIXED (moved here)
 
 // Connect to MongoDB
 connectDB();
@@ -16,42 +19,51 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true,
 }));
+
 app.use(express.json());
 
-// Routes
-app.use('/api/users',       require('./routes/userRoutes'));
-app.use('/api/tickets',     require('./routes/ticketRoutes'));
-app.use('/api/messages',    require('./routes/messageRoutes'));
-app.use('/api/resources',   require('./routes/resourceRoutes'));
+// =====================
+// ROUTES
+// =====================
+
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/tickets', require('./routes/ticketRoutes'));
+app.use('/api/messages', require('./routes/messageRoutes'));
+app.use('/api/resources', require('./routes/resourceRoutes'));
 app.use('/api/transcripts', require('./routes/transcriptRoutes'));
-app.use('/api/reports',     require('./routes/reportRoutes'));
-app.use('/api/mood',        require('./routes/moodRoutes'));
-app.use('/api/audit', auditRoutes); 
+app.use('/api/reports', require('./routes/reportRoutes'));
+app.use('/api/mood', require('./routes/moodRoutes'));
+app.use('/api/audit', auditRoutes);
 
+// ✅ QUIZ ROUTE (FIXED LOCATION)
+app.use('/api/quiz', quizRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'Server running' }));
+// =====================
+// HEALTH CHECK
+// =====================
+app.get('/api/health', (req, res) =>
+  res.json({ status: 'OK', message: 'Server running' })
+);
 
-// 404 handler
-app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
+// =====================
+// 404 HANDLER
+// =====================
+app.use((req, res) =>
+  res.status(404).json({ message: 'Route not found' })
+);
 
-// Global error handler
+// =====================
+// ERROR HANDLER
+// =====================
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Server error', error: err.message });
 });
 
+// =====================
+// START SERVER
+// =====================
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
-
-
-
-
-
-
-
-
-
-const quizRoutes = require('./routes/quizRoutes');
-app.use('/api/quiz', quizRoutes);
+app.listen(PORT, () =>
+  console.log(`🚀 Server running on port ${PORT}`)
+);
