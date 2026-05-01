@@ -2,12 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { getResources, getCategories } from '../services/api';
 import './ResourceList.css';
 
+const BOOKMARK_KEY = 'mindbridge_bookmarks';
+
+function loadBookmarks() {
+  try {
+    return JSON.parse(localStorage.getItem(BOOKMARK_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveBookmarks(bookmarks) {
+  localStorage.setItem(BOOKMARK_KEY, JSON.stringify(bookmarks));
+}
+
 export default function ResourceList() {
   const [resources, setResources] = useState([]);
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(true);
+  const [bookmarks, setBookmarks] = useState(loadBookmarks());
 
   const fetchResources = async () => {
     setLoading(true);
@@ -36,7 +51,22 @@ export default function ResourceList() {
     return () => clearTimeout(t);
   }, [search, selectedCategory]);
 
-  //  RATE FUNCTION (FR-15)
+  const toggleBookmark = (resource) => {
+    const exists = bookmarks.some((b) => b._id === resource._id);
+
+    let updated;
+
+    if (exists) {
+      updated = bookmarks.filter((b) => b._id !== resource._id);
+    } else {
+      updated = [...bookmarks, resource];
+    }
+
+    setBookmarks(updated);
+    saveBookmarks(updated);
+  };
+
+  // RATE FUNCTION (FR-15)
   const rateResource = async (id, rating) => {
     try {
       await fetch(`http://localhost:5000/api/resources/rate/${id}`, {
@@ -47,7 +77,6 @@ export default function ResourceList() {
         body: JSON.stringify({ rating }),
       });
 
-      // refresh after rating
       fetchResources();
     } catch (err) {
       console.log('Rating failed');
@@ -97,16 +126,35 @@ export default function ResourceList() {
                 </span>
               </div>
 
-              <h3 className="resource-title">{r.title}</h3>
-              <p className="resource-desc">{r.description}</p>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <h3 className="resource-title">{r.title}</h3>
 
-              {/*  RATING DISPLAY */}
-              <div style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
-                 {r.averageRating?.toFixed(1) || '0.0'} / 5
-                {' '}({r.ratingCount || 0})
+                <button
+                  onClick={() => toggleBookmark(r)}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    fontSize: '1.4rem'
+                  }}
+                >
+                  {bookmarks.some((b) => b._id === r._id) ? '★' : '☆'}
+                </button>
               </div>
 
-              {/*  RATING BUTTONS */}
+              <p className="resource-desc">{r.description}</p>
+
+              <div style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                {r.averageRating?.toFixed(1) || '0.0'} / 5{' '}
+                ({r.ratingCount || 0})
+              </div>
+
               <div style={{ marginTop: '0.5rem' }}>
                 {[1, 2, 3, 4, 5].map((num) => (
                   <button

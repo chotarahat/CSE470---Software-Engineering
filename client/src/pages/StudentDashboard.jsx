@@ -6,6 +6,7 @@ import { trackTicket, getTicketById } from '../services/api';
 import './StudentDashboard.css';
 
 const STORAGE_KEY = 'mindbridge_tickets';
+const BOOKMARK_KEY = 'mindbridge_bookmarks';
 
 function loadSavedTickets() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
@@ -15,10 +16,19 @@ function saveTickets(tickets) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
 }
 
+function loadBookmarkedResources() {
+  try {
+    return JSON.parse(localStorage.getItem(BOOKMARK_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
 export default function StudentDashboard() {
   const [tab, setTab] = useState('submit'); // 'submit' | 'track' | 'saved'
   const [submitted, setSubmitted] = useState(null);  // result from TicketForm
   const [savedTickets, setSavedTickets] = useState(loadSavedTickets());
+  const [bookmarkedResources] = useState(loadBookmarkedResources());
 
   // Track form
   const [trackId, setTrackId] = useState('');
@@ -92,7 +102,8 @@ export default function StudentDashboard() {
           { key: 'submit', label: '+ New Request' },
           { key: 'track',  label: '🔍 Track Ticket' },
           { key: 'saved',  label: `📋 My Tickets (${savedTickets.length})` },
-        ].map(t => (
+          { key: 'bookmarks', label: `🔖 Bookmarks (${bookmarkedResources.length})` },
+         ].map(t => (
           <button
             key={t.key}
             className={`tab-btn ${tab === t.key ? 'active' : ''}`}
@@ -260,6 +271,36 @@ export default function StudentDashboard() {
           )}
         </div>
       )}
+      {tab === 'bookmarks' && (
+        <div className="tab-panel">
+          {bookmarkedResources.length === 0 ? (
+            <div className="empty-state card">
+              <h3>No bookmarked resources</h3>
+              <p>Resources you bookmark will appear here.</p>
+            </div>
+          ) : (
+            bookmarkedResources.map((r) => (
+              <div key={r._id} className="card saved-ticket-row">
+                <div>
+                  <strong>{r.title}</strong>
+                  <p style={{ marginTop: '0.5rem' }}>{r.description}</p>
+                </div>
+
+                {r.url && (
+                  <a
+                    href={r.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary btn-sm"
+                  >
+                    Open
+                  </a>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+     )}
     </div>
   );
 }
