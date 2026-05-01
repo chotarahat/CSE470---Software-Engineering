@@ -6,6 +6,7 @@ import {
   getCategories, createCategory,
 } from '../services/api';
 import GenerateReport from '../components/GenerateReport';
+import AuditLogTable from '../components/AuditLogTable';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -22,6 +23,7 @@ export default function AdminDashboard() {
           { key: 'tickets',    label: '🎫 Tickets' },
           { key: 'counselors', label: '👥 Counselors' },
           { key: 'resources',  label: '📚 Resources' },
+          { key: 'audit-logs', label: '📝 Audit Logs' },
         ].map(t => (
           <button key={t.key} className={`tab-btn ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>
             {t.label}
@@ -32,6 +34,7 @@ export default function AdminDashboard() {
       {tab === 'tickets'    && <TicketsTab />}
       {tab === 'counselors' && <CounselorsTab />}
       {tab === 'resources'  && <ResourcesTab />}
+      {tab === 'audit-logs' && <AuditLogTable />}
     </div>
   );
 }

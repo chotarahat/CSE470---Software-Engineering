@@ -6,6 +6,7 @@ const connectDB = require('./config/db');
 dotenv.config();
 
 const app = express();
+const auditRoutes = require('./routes/auditRoutes');
 
 // Connect to MongoDB
 connectDB();
@@ -24,6 +25,9 @@ app.use('/api/messages',    require('./routes/messageRoutes'));
 app.use('/api/resources',   require('./routes/resourceRoutes'));
 app.use('/api/transcripts', require('./routes/transcriptRoutes'));
 app.use('/api/reports',     require('./routes/reportRoutes'));
+app.use('/api/mood',        require('./routes/moodRoutes'));
+app.use('/api/audit', auditRoutes); 
+
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'Server running' }));
