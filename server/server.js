@@ -43,3 +43,15 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+
+
+
+
+
+
+
+
+
+const quizRoutes = require('./routes/quizRoutes');
+app.use('/api/quiz', quizRoutes);

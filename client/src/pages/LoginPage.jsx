@@ -104,6 +104,33 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+  if(mfaStep){
+    return (
+      <div className="page login-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <form className="card" onSubmit={handleMfaSubmit} style={{ maxWidth: '400px', width: '100%' }}>
+          <h2>Security Verification</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+            Please enter the 6-digit code from your Authenticator app.
+          </p>
+          {error && <div className="alert alert-error">{error}</div>}
+          <div className="form-group">
+            <input
+              type="text"
+              placeholder="000000"
+              maxLength="6"
+              value={mfaToken}
+              onChange={(e) => setMfaToken(e.target.value)}
+              required
+              style={{ fontSize: '2rem', textAlign: 'center', letterSpacing: '0.5rem' }}
+            />
+          </div>
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+            {loading ? 'Verifying...' : 'Verify Login'}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
 
   return (
