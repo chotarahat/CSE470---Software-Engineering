@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Message = require('../models/Message');
 const { autoAssignCounselor } = require('../utils/assignmentLogic');
 const { worker } = require('cluster');
+const { logEvent } = require('../utils/logger');
 
 // POST /api/tickets  — anonymous submission
 const createTicket = async (req, res) => {
@@ -29,6 +30,15 @@ const createTicket = async (req, res) => {
       assignedAt: counselor ? new Date() : null,
       crisisFlag:isCrisis,
     });
+
+    if (isCrisis) {
+      await logEvent({ 
+        user: null, // Anonymous student
+        action: 'CRISIS_FLAGGED', 
+        status: 'WARNING', 
+        details: { ticketId: ticket.ticketId, priority: ticket.priority } 
+      });
+    }
 
     if (counselor) {
       await User.findByIdAndUpdate(counselor._id, { $push: { assignedTickets: ticket._id } });
@@ -372,6 +382,12 @@ const updateTicketPriority = async (req, res) => {
     ticket.priority = newPriority;
 
     await ticket.save();
+    await logEvent({ 
+      user: null, 
+      action: 'PRIORITY_UPDATED', 
+      status: 'SUCCESS', 
+      details: { ticketId: ticket.ticketId, newPriority } 
+    });
 
     res.status(200).json({
       message: "Priority updated successfully",

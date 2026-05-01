@@ -43,7 +43,7 @@ export default function MoodTracker() {
         sessionStorage.setItem('ventify_session_logged', 'true');
         setShowThankYou(true);
         
-        // Show the thank you message for 2 seconds, then close the popup entirely
+
         setTimeout(() => {
           setIsVisible(false);
         }, 2000);
@@ -55,7 +55,7 @@ export default function MoodTracker() {
     }
   };
 
-  // If they already logged this session, or closed the popup, render nothing!
+
   if (!isVisible || hasLoggedToday) return null;
 
   return (
@@ -66,7 +66,6 @@ export default function MoodTracker() {
         <button 
           onClick={() => {
             setIsVisible(false);
-            // Optional: If they click 'X', count it as 'seen' for this session so it doesn't annoy them on every page click
             sessionStorage.setItem('ventify_session_logged', 'true'); 
           }} 
           style={styles.closeBtn}
@@ -131,7 +130,7 @@ export default function MoodTracker() {
   );
 }
 
-// Inline styles for the Overlay Popup
+
 const styles = {
   overlay: {
     position: 'fixed',

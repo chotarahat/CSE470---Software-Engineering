@@ -6,6 +6,8 @@ exports.logMood = async (req, res) => {
     const { deviceId, score, emotionTag, notes } = req.body;
     
     // Optional: Prevent spamming by checking if they already logged today
+    // --- TEMPORARILY DISABLED FOR TESTING ---
+    /*
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     
@@ -17,6 +19,8 @@ exports.logMood = async (req, res) => {
     if (existingLog) {
       return res.status(400).json({ message: "You have already logged your mood today." });
     }
+    */
+    // ----------------------------------------
 
     const newLog = await MoodLog.create({ deviceId, score, emotionTag, notes });
     res.status(201).json(newLog);
