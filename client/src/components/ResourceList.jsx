@@ -46,10 +46,11 @@ export default function ResourceList() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     const t = setTimeout(fetchResources, 300);
     return () => clearTimeout(t);
-  }, [search, selectedCategory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, selectedCategory]); 
 
   const toggleBookmark = (resource) => {
     const exists = bookmarks.some((b) => b._id === resource._id);
