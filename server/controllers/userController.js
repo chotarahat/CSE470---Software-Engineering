@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const speakeasy=require('speakeasy');
 const qrcode=require('qrcode');
+const { logEvent } = require('../utils/logger');
 
 const generateMFA=async (req,res)=>{
   try{
@@ -35,8 +36,10 @@ const enableMFA = async (req,res) =>{
     if (verified){
       user.isMFAEnabled=true;
       await user.save();
+      await logEvent({ user: user._id, action: '2FA_ENABLED', status: 'SUCCESS', details: { email: user.email } });
       res.json({message:"MFA successfully enabled"});
     }else{
+      await logEvent({ user: user._id, action: '2FA_ENABLED', status: 'FAILURE', details: { email: user.email } });
       res.status(400).json({message:"Invalid code. Try Again."});
     }
   } catch(error){
@@ -103,7 +106,7 @@ const loginUser = async (req, res) => {
 const verifyMFALogin=async(req,res)=>{
   try{
     const{userID,token}=req.body;
-    const user=await User.findById(userId).select('+twoFactorSecret');
+    const user=await User.findById(userID).select('+twoFactorSecret');
     const verified=speakeasy.totp.verify({
       secret:user.twoFactorSecret,
       encoding:'base32',
@@ -123,6 +126,25 @@ const verifyMFALogin=async(req,res)=>{
     res.status(500).json({message:error.message});
   }
   
+};
+
+// POST /api/users/reset-password (Project shortcut: Direct reset without email link)
+const resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    
+    // 1. Find the user by their email
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'No account found with that email.' });
+
+    // 2. Update the password (your User.js pre-save hook will automatically hash this!)
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 // GET /api/users/profile
@@ -149,6 +171,12 @@ const createCounselor = async (req, res) => {
     if (exists) return res.status(400).json({ message: 'Email already registered' });
 
     const counselor = await User.create({ name, email, password, role: 'counselor' });
+    await logEvent({ 
+      user: req.user._id, 
+      action: 'COUNSELOR_CREATED', 
+      status: 'SUCCESS', 
+      details: { newCounselorEmail: email } 
+    });
     res.status(201).json({
       _id: counselor._id,
       name: counselor.name,
@@ -166,10 +194,16 @@ const toggleAvailability = async (req, res) => {
     const user = await User.findById(req.user._id);
     user.availability = !user.availability;
     await user.save();
+    await logEvent({ 
+      user: user._id, 
+      action: 'SHIFT_TOGGLED', 
+      status: 'SUCCESS', 
+      details: { isNowAvailable: user.availability } 
+    });
     res.json({ availability: user.availability });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { registerUser, loginUser, getProfile, getAllCounselors, createCounselor, toggleAvailability,verifyMFALogin , generateMFA, enableMFA };
+module.exports = { registerUser, loginUser, getProfile, getAllCounselors, createCounselor, toggleAvailability,verifyMFALogin , generateMFA, enableMFA, resetPassword };

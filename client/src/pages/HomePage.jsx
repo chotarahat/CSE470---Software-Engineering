@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import ResourceList from '../components/ResourceList';
 import MoodTracker from '../components/MoodTracker'; // 🚀 Imported the new tracker!
 import './HomePage.css';
+import QuizWidget from '../components/QuizWidget';
 
 export default function HomePage() {
 
@@ -105,6 +106,13 @@ export default function HomePage() {
         </div>
         <ResourceList />
       </section>
+
+      {/* QUIZ SECTION */}
+      <section className="quiz-section" style={{ padding: '2rem', marginTop: '2rem' }}>
+        <h2>Quick Self-Assessment Quiz</h2>
+        <QuizWidget />
+      </section>
+
     </div>
   );
 }

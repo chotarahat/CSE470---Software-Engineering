@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getTickets, updateTicketStatus, toggleAvailability, acknowledgeCrisis } from '../services/api';
+import api, { getTickets, updateTicketStatus, toggleAvailability, acknowledgeCrisis } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import TicketChat from '../components/TicketChat';
 import ExportTranscript from '../components/ExportTranscript';
 import './CounselorDashboard.css';
+import MfaSetup from '../components/MfaSetup';
 
 export default function CounselorDashboard() {
   const { user } = useAuth();
@@ -13,6 +14,9 @@ export default function CounselorDashboard() {
   const [available, setAvailable]     = useState(user?.availability ?? true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [ackLoading, setAckLoading]   = useState(false);
+  const [showConsultForm, setShowConsultForm] = useState(false);
+  const [meetingLink, setMeetingLink] = useState('');
+  const [platform, setPlatform] = useState('meet');
 
   const fetchTickets = async () => {
     try {
@@ -37,6 +41,20 @@ export default function CounselorDashboard() {
       setTickets(prev => prev.map(t => t._id === ticketId ? { ...t, status } : t));
       if (activeTicket?._id === ticketId) setActiveTicket(prev => ({ ...prev, status }));
     } catch {/* silent */}
+  };
+
+  const handleRequestConsultation = async (e) => {
+    e.preventDefault();
+    if (!meetingLink) return alert("Please provide a meeting link.");
+    
+    try {
+      await api.post(`/tickets/${activeTicket._id}/request-call`, { meetingLink, platform });
+      alert("Consultation request sent successfully!");
+      setShowConsultForm(false);
+      setMeetingLink('');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to send request.');
+    }
   };
 
   // Counselor acknowledges they have seen the crisis alert
@@ -271,6 +289,51 @@ export default function CounselorDashboard() {
                 Conversation
               </h3>
               <TicketChat ticket={activeTicket} anonymousToken={null} />
+              <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+                {!showConsultForm ? (
+                  <button 
+                    className="btn btn-secondary btn-full" 
+                    onClick={() => setShowConsultForm(true)}
+                  >
+                    📞 Request Voice/Video Consultation
+                  </button>
+                ) : (
+                  <form onSubmit={handleRequestConsultation} style={{ background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>Schedule Anonymous Consultation</h4>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                      Students will be advised to use pseudonyms and keep cameras off to protect their anonymity.
+                    </p>
+                    
+                    {/* 👇 CHANGED: Added flexWrap, width: 'auto', and minWidth: '200px' */}
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                      <select 
+                        value={platform} 
+                        onChange={e => setPlatform(e.target.value)}
+                        style={{ width: 'auto', padding: '0.5rem', fontSize: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                      >
+                        <option value="meet">Google Meet</option>
+                        <option value="zoom">Zoom</option>
+                        <option value="other">Other</option>
+                      </select>
+                      
+                      <input 
+                        type="url" 
+                        placeholder="Paste Meeting Link Here (https://...)" 
+                        value={meetingLink}
+                        onChange={e => setMeetingLink(e.target.value)}
+                        required
+                        style={{ flex: 1, minWidth: '200px', padding: '0.5rem', fontSize: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowConsultForm(false)}>Cancel</button>
+                      <button type="submit" className="btn btn-primary btn-sm">Send Request</button>
+                    </div>
+                  </form>
+                )}
+              </div>
+              {/* ── END CONSULTATION REQUEST UI ── */}
 
               {/* Export encrypted transcript — counselor view */}
               <ExportTranscript ticket={activeTicket} anonymousToken={null} />
