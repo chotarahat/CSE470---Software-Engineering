@@ -5,7 +5,7 @@ const Ticket = require('../models/Ticket');
 // POST /api/messages  — counselor/admin sends a message
 const sendMessage = async (req, res) => {
   try {
-    // 👇 1. Extract audioData from req.body
+    // Extract audioData from req.body
     const { ticketId, messageText, audioData } = req.body;
 
     const ticket = await Ticket.findById(ticketId);
@@ -21,7 +21,7 @@ const sendMessage = async (req, res) => {
       senderRole: req.user.role,
       sender: req.user._id,
       messageText,
-      audioData: audioData || null // 👇 2. Save it to the database
+      audioData: audioData || null //
     });
 
     res.status(201).json(message);
@@ -33,7 +33,7 @@ const sendMessage = async (req, res) => {
 // POST /api/messages/anonymous  — student replies anonymously
 const sendAnonymousMessage = async (req, res) => {
   try {
-    // 👇 3. Extract audioData from req.body
+    // Extract audioData from req.body
     const { ticketId, messageText, anonymousToken, audioData } = req.body;
 
     const ticket = await Ticket.findById(ticketId);
@@ -46,7 +46,7 @@ const sendAnonymousMessage = async (req, res) => {
       senderRole: 'student',
       sender: null,
       messageText,
-      audioData: audioData || null // 👇 4. Save it to the database
+      audioData: audioData || null // Save it to the database
     });
 
     res.status(201).json(message);
