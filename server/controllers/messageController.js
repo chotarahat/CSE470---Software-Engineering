@@ -2,14 +2,15 @@ const Message = require('../models/Message');
 const Ticket = require('../models/Ticket');
 
 // POST /api/messages  — counselor/admin sends a message
+// POST /api/messages  — counselor/admin sends a message
 const sendMessage = async (req, res) => {
   try {
-    const { ticketId, messageText } = req.body;
+    // 👇 1. Extract audioData from req.body
+    const { ticketId, messageText, audioData } = req.body;
 
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
-    // Counselors can only message on their assigned ticket
     if (req.user.role === 'counselor' &&
       ticket.assignedCounselor?.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Access denied' });
@@ -20,6 +21,7 @@ const sendMessage = async (req, res) => {
       senderRole: req.user.role,
       sender: req.user._id,
       messageText,
+      audioData: audioData || null // 👇 2. Save it to the database
     });
 
     res.status(201).json(message);
@@ -31,7 +33,8 @@ const sendMessage = async (req, res) => {
 // POST /api/messages/anonymous  — student replies anonymously
 const sendAnonymousMessage = async (req, res) => {
   try {
-    const { ticketId, messageText, anonymousToken } = req.body;
+    // 👇 3. Extract audioData from req.body
+    const { ticketId, messageText, anonymousToken, audioData } = req.body;
 
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
@@ -43,6 +46,7 @@ const sendAnonymousMessage = async (req, res) => {
       senderRole: 'student',
       sender: null,
       messageText,
+      audioData: audioData || null // 👇 4. Save it to the database
     });
 
     res.status(201).json(message);
