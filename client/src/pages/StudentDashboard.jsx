@@ -2,11 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TicketForm from '../components/TicketForm';
 import TicketChat from '../components/TicketChat';
 import ExportTranscript from '../components/ExportTranscript';
-import api, { trackTicket } from '../services/api';
-import './StudentDashboard.css';
 
-const STORAGE_KEY = 'mindbridge_tickets';
-const BOOKMARK_KEY = 'mindbridge_bookmarks';
 
 function loadSavedTickets() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
@@ -16,19 +12,12 @@ function saveTickets(tickets) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
 }
 
-function loadBookmarkedResources() {
-  try {
-    return JSON.parse(localStorage.getItem(BOOKMARK_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
 
 export default function StudentDashboard() {
   const [tab, setTab] = useState('submit'); // 'submit' | 'track' | 'saved'
   const [submitted, setSubmitted] = useState(null);  // result from TicketForm
   const [savedTickets, setSavedTickets] = useState(loadSavedTickets());
-  const [bookmarkedResources] = useState(loadBookmarkedResources());
+
 
   // Track form
   const [trackId, setTrackId] = useState('');
@@ -69,37 +58,6 @@ export default function StudentDashboard() {
     }
   };
 
-  //const openChat = async (ticketId, token) => {
-    //try {
-      // We need the MongoDB _id for the chat; track gives us just the display info
-      //const res = await trackTicket(ticketId, token);
-      // We need _id — fetch from track response won't have it; use a workaround:
-      // Store the raw data and pass token; TicketChat uses the _id from the ticket object
-      // The track endpoint doesn't return _id for privacy — we pass ticketId as lookup key
-      //setActiveTicket({ ticketId, token, info: res.data });
-    //} catch {
-      //alert('Could not open this ticket. Check your token.');
-    //}
-  //};
-
-  const statusColor = (s) => {
-    if (s === 'open') return 'badge-open';
-    if (s === 'in-progress') return 'badge-progress';
-    if (s === 'resolved') return 'badge-resolved';
-    return 'badge-closed';
-  };
-
-  const handleConsent = async (consentValue) => {
-    try {
-      const res = await api.patch(`/tickets/track/${trackedTicket.ticketId}/consent`, {
-        anonymousToken: trackToken,
-        consent: consentValue
-      });
-      setTrackedTicket(res.data.ticket); 
-    } catch (err) {
-      alert('Failed to update consent. Please try again.');
-    }
-  };
 
   return (
     <div className="page student-dashboard">
@@ -114,8 +72,6 @@ export default function StudentDashboard() {
           { key: 'submit', label: '+ New Request' },
           { key: 'track',  label: '🔍 Track Ticket' },
           { key: 'saved',  label: `📋 My Tickets (${savedTickets.length})` },
-          { key: 'bookmarks', label: `🔖 Bookmarks (${bookmarkedResources.length})` },
-         ].map(t => (
           <button
             key={t.key}
             className={`tab-btn ${tab === t.key ? 'active' : ''}`}
@@ -195,7 +151,7 @@ export default function StudentDashboard() {
       {tab === 'track' && (
         <div className="tab-panel">
           {!trackedTicket ? (
-            <div className="card track-from-card">
+
               <h2 style={{ marginBottom: '1.5rem' }}>Track Your Ticket</h2>
               {trackError && <div className="alert alert-error">{trackError}</div>}
               <form onSubmit={handleTrack}>
@@ -223,7 +179,7 @@ export default function StudentDashboard() {
               </form>
             </div>
           ) : (
-            <div className="tracked-ticket-view">
+
               <button className="btn btn-secondary btn-sm" style={{ marginBottom: '1rem' }}
                 onClick={() => setTrackedTicket(null)}>← Back</button>
               <div className="card" style={{ marginBottom: '1rem' }}>
@@ -241,50 +197,6 @@ export default function StudentDashboard() {
                 </div>
                 <hr className="divider" />
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{trackedTicket.description}</p>
-              </div>
-              {trackedTicket?.consultation?.isRequested && (
-                <div className="card" style={{ border: '1px solid var(--accent)', marginBottom: '1rem', background: 'rgba(99, 102, 241, 0.05)' }}>
-                  <h4 style={{ color: 'var(--accent)', marginTop: 0, marginBottom: '0.5rem', fontSize: '1.1rem' }}>
-                    🚨 Live Consultation Requested
-                  </h4>
-
-                  {!trackedTicket.consultation.consentGiven ? (
-                    <>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                        Your counselor has offered a live <strong>{trackedTicket.consultation.platform}</strong> consultation. <br/><br/>
-                        <strong>Privacy Warning:</strong> To maintain your anonymity, do <b>not</b> use your real name, ensure your camera is turned <b>off</b>, and consider using a third-party voice changer. Do you consent to join this call?
-                      </p>
-                      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                        <button className="btn btn-primary btn-sm" onClick={() => handleConsent(true)}>
-                          Yes, I Consent
-                        </button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleConsent(false)}>
-                          No, Thanks
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--green)', fontWeight: '600', marginBottom: '0.5rem' }}>
-                        ✓ Consent Granted.
-                      </p>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                        Please join using the link below. Remember to keep your camera off!
-                      </p>
-                      <div style={{ padding: '0.75rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', wordBreak: 'break-all' }}>
-                        <strong>Secure Meeting Link: </strong>
-                        <a href={trackedTicket.consultation.meetingLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
-                          {trackedTicket.consultation.meetingLink}
-                        </a>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-              {/* Chat requires MongoDB _id — handled via saved tickets flow */}
-              <div className="alert alert-info" style={{ fontSize: '0.82rem' }}>
-                To chat with your counselor, use the <strong>My Tickets</strong> tab if you saved this ticket locally.
-              </div>
             </div>
           )}
         </div>
