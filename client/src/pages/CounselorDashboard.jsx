@@ -284,4 +284,5 @@ export default function CounselorDashboard() {
 
     </div>
   );
-}
+};
+};
