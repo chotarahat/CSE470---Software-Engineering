@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import api, { trackTicket } from '../services/api';
 import TicketForm from '../components/TicketForm';
 import TicketChat from '../components/TicketChat';
 import ExportTranscript from '../components/ExportTranscript';
 
+const STORAGE_KEY = 'ventify_student_tickets';
 
 function loadSavedTickets() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
   catch { return []; }
 }
+
 function saveTickets(tickets) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
 }
 
-
 export default function StudentDashboard() {
-  const [tab, setTab] = useState('submit'); // 'submit' | 'track' | 'saved'
+  const [tab, setTab] = useState('submit'); // 'submit' | 'track' | 'saved' | 'bookmarks'
   const [submitted, setSubmitted] = useState(null);  // result from TicketForm
   const [savedTickets, setSavedTickets] = useState(loadSavedTickets());
-
+  const [bookmarkedResources, setBookmarkedResources] = useState([]); // Added to prevent crash
 
   // Track form
   const [trackId, setTrackId] = useState('');
@@ -58,6 +60,12 @@ export default function StudentDashboard() {
     }
   };
 
+  const statusColor = (s) => {
+    if (s === 'open') return 'badge-open';
+    if (s === 'in-progress') return 'badge-progress';
+    if (s === 'resolved') return 'badge-resolved';
+    return 'badge-closed';
+  };
 
   return (
     <div className="page student-dashboard">
@@ -71,7 +79,8 @@ export default function StudentDashboard() {
         {[
           { key: 'submit', label: '+ New Request' },
           { key: 'track',  label: '🔍 Track Ticket' },
-          { key: 'saved',  label: `📋 My Tickets (${savedTickets.length})` },
+          { key: 'saved',  label: `📋 My Tickets (${savedTickets.length})` }
+        ].map(t => (
           <button
             key={t.key}
             className={`tab-btn ${tab === t.key ? 'active' : ''}`}
@@ -93,7 +102,6 @@ export default function StudentDashboard() {
       {/* ── Submitted confirmation ── */}
       {tab === 'submitted' && submitted && (
         <div className="tab-panel card">
-
           {/* Crisis-specific header */}
           {submitted.isCrisis ? (
             <div className="crisis-confirmation">
@@ -151,7 +159,7 @@ export default function StudentDashboard() {
       {tab === 'track' && (
         <div className="tab-panel">
           {!trackedTicket ? (
-
+            <>
               <h2 style={{ marginBottom: '1.5rem' }}>Track Your Ticket</h2>
               {trackError && <div className="alert alert-error">{trackError}</div>}
               <form onSubmit={handleTrack}>
@@ -177,9 +185,9 @@ export default function StudentDashboard() {
                   {trackLoading ? 'Looking up...' : 'Find Ticket'}
                 </button>
               </form>
-            </div>
+            </>
           ) : (
-
+            <>
               <button className="btn btn-secondary btn-sm" style={{ marginBottom: '1rem' }}
                 onClick={() => setTrackedTicket(null)}>← Back</button>
               <div className="card" style={{ marginBottom: '1rem' }}>
@@ -197,7 +205,8 @@ export default function StudentDashboard() {
                 </div>
                 <hr className="divider" />
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{trackedTicket.description}</p>
-            </div>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -234,6 +243,8 @@ export default function StudentDashboard() {
           )}
         </div>
       )}
+      
+      {/* ── Bookmarks Tab ── */}
       {tab === 'bookmarks' && (
         <div className="tab-panel">
           {bookmarkedResources.length === 0 ? (
@@ -248,7 +259,6 @@ export default function StudentDashboard() {
                   <strong>{r.title}</strong>
                   <p style={{ marginTop: '0.5rem' }}>{r.description}</p>
                 </div>
-
                 {r.url && (
                   <a
                     href={r.url}
@@ -310,18 +320,9 @@ function ActiveTicketView({ ticketId, token }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // We need the Mongo _id; trackTicket doesn't return it (privacy).
-    // So we fetch via the public track endpoint and reconstruct.
-    // The TicketChat component needs _id — we expose it via a special lookup.
     trackTicket(ticketId, token)
       .then(r => {
-        // Attach _id placeholder; backend chat uses ticketId string via a secondary lookup
-        // We store the full response and pass the token; chat resolves by ticket ObjectId
-        // For this to work we need _id — we get it from the track response if we add it server-side.
-        // As a pragmatic workaround, store _id in the saved entry at submit time via the ticket route.
-        // Here we use a trick: query /tickets/track returns enough to render info.
-        // Chat requires _id from the ticket list — we pass ticketId and let TicketChat search.
-        setTicket({ ...r.data, _id: r.data._id || ticketId }); // will be populated if server sends it
+        setTicket({ ...r.data, _id: r.data._id || ticketId }); 
       })
       .catch(() => setError('Could not load ticket.'));
   }, [ticketId, token]);
@@ -424,4 +425,3 @@ function ActiveTicketView({ ticketId, token }) {
     </div>
   );
 }
-
