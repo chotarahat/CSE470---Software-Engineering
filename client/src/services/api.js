@@ -14,7 +14,11 @@ API.interceptors.request.use((config) => {
 // ── Auth ──────────────────────────────────────────────
 export const register = (data) => API.post('/users/register', data);
 export const login = (data) => API.post('/users/login', data);
+export const resetPassword = (email, newPassword) => API.post('/users/reset-password', { email, newPassword });
+export const verifyMFA=(data)=> API.post('/users/verify-mfa',data);
 export const getProfile = () => API.get('/users/profile');
+export const generateMFA=() => API.post('/users/generate-mfa');
+export const enableMFA = (data) => API.post('/users/enable-mfa',data);
 
 // ── Counselor management (admin) ─────────────────────
 export const getCounselors = () => API.get('/users/counselors');
@@ -48,7 +52,6 @@ export const deleteResource = (id) => API.delete(`/resources/${id}`);
 export const getCategories = () => API.get('/resources/categories');
 export const createCategory = (data) => API.post('/resources/categories', data);
 
-export default API;
 
 // ── Transcripts ───────────────────────────────────────────
 // Counselor / admin export — JWT required
@@ -60,3 +63,12 @@ export const exportTranscriptAnonymous = (ticketMongoId, token) =>
   API.get(`/transcripts/${ticketMongoId}/export-anonymous?token=${token}`, {
     responseType: 'text',
   });
+
+// ── Reports ───────────────────────────────────────────────
+// Admin only — download full system report as .txt file
+export const generateReport = () =>
+  API.get('/reports/generate', { responseType: 'text' });
+
+//Fetch Logs
+export const getAuditLogs = () => API.get('/audit');
+export default API;

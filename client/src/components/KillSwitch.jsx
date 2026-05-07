@@ -33,7 +33,7 @@ export default function KillSwitch() {
       }}
       title="Instantly hide this page and clear history"
     >
-      Exit Quickly (Esc)
+      Exit (Esc)
     </button>
   );
 }
