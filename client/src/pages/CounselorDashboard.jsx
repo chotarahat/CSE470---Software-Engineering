@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { getTickets, updateTicketStatus, toggleAvailability, acknowledgeCrisis } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import TicketChat from '../components/TicketChat';
 import ExportTranscript from '../components/ExportTranscript';
 import './CounselorDashboard.css';
+import MfaSetup from '../components/MfaSetup';
 
 export default function CounselorDashboard() {
   const { user } = useAuth();
@@ -13,6 +13,7 @@ export default function CounselorDashboard() {
   const [available, setAvailable]     = useState(user?.availability ?? true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [ackLoading, setAckLoading]   = useState(false);
+
 
   const fetchTickets = async () => {
     try {
@@ -29,15 +30,7 @@ export default function CounselorDashboard() {
       const res = await toggleAvailability();
       setAvailable(res.data.availability);
     } catch {/* silent */}
-  };
 
-  const handleStatusChange = async (ticketId, status) => {
-    try {
-      await updateTicketStatus(ticketId, status);
-      setTickets(prev => prev.map(t => t._id === ticketId ? { ...t, status } : t));
-      if (activeTicket?._id === ticketId) setActiveTicket(prev => ({ ...prev, status }));
-    } catch {/* silent */}
-  };
 
   // Counselor acknowledges they have seen the crisis alert
   const handleAcknowledgeCrisis = async (ticketId) => {
@@ -272,12 +265,23 @@ export default function CounselorDashboard() {
               </h3>
               <TicketChat ticket={activeTicket} anonymousToken={null} />
 
+
               {/* Export encrypted transcript — counselor view */}
               <ExportTranscript ticket={activeTicket} anonymousToken={null} />
             </div>
           )}
         </div>
       </div>
+
+      {/* ── BOTTOM PANEL: SECURITY SETTINGS (MFA SETUP) ── */}
+      <section className="security-section" style={{ marginTop: '4rem', paddingBottom: '2rem' }}>
+        <hr style={{ marginBottom: '2rem', borderColor: 'var(--border)' }} />
+        <div style={{ padding: '0 1rem' }}>
+          <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Account Security Settings</h2>
+          <MfaSetup />
+        </div>
+      </section>
+
     </div>
   );
 }

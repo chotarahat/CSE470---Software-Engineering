@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Message = require('../models/Message');
 const { autoAssignCounselor } = require('../utils/assignmentLogic');
 const { worker } = require('cluster');
+const { logEvent } = require('../utils/logger');
 
 // POST /api/tickets  — anonymous submission
 const createTicket = async (req, res) => {
@@ -29,6 +30,15 @@ const createTicket = async (req, res) => {
       assignedAt: counselor ? new Date() : null,
       crisisFlag:isCrisis,
     });
+
+    if (isCrisis) {
+      await logEvent({ 
+        user: null, // Anonymous student
+        action: 'CRISIS_FLAGGED', 
+        status: 'WARNING', 
+        details: { ticketId: ticket.ticketId, priority: ticket.priority } 
+      });
+    }
 
     if (counselor) {
       await User.findByIdAndUpdate(counselor._id, { $push: { assignedTickets: ticket._id } });
@@ -75,6 +85,7 @@ const trackTicket = async (req, res) => {
       resolvedAt: ticket.resolvedAt,
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
+      consultation: ticket.consultation,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -372,6 +383,12 @@ const updateTicketPriority = async (req, res) => {
     ticket.priority = newPriority;
 
     await ticket.save();
+    await logEvent({ 
+      user: null, 
+      action: 'PRIORITY_UPDATED', 
+      status: 'SUCCESS', 
+      details: { ticketId: ticket.ticketId, newPriority } 
+    });
 
     res.status(200).json({
       message: "Priority updated successfully",
@@ -383,5 +400,54 @@ const updateTicketPriority = async (req, res) => {
   }
 };
 
+// POST /api/tickets/:ticketId/request-call (Counselor only)
+const requestConsultation = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { meetingLink, platform } = req.body;
 
-module.exports = { createTicket, trackTicket, updateTrackedTicketPriority, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics, updateTicketPriority};
+    const ticket = await Ticket.findById(ticketId);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+
+    // Ensure only the assigned counselor can do this
+    if (ticket.assignedCounselor.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized for this ticket.' });
+    }
+
+    ticket.consultation.isRequested = true;
+    ticket.consultation.meetingLink = meetingLink;
+    ticket.consultation.platform = platform || 'other';
+    await ticket.save();
+
+    res.json({ message: 'Consultation request sent to student.', ticket });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// PATCH /api/tickets/track/:ticketId/consent (Anonymous Student)
+const consentToConsultation = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { anonymousToken, consent } = req.body; // consent is a boolean (true/false)
+
+    const ticket = await Ticket.findOne({ ticketId });
+    if (!ticket || ticket.anonymousToken !== anonymousToken) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    ticket.consultation.consentGiven = consent;
+    if (!consent) {
+      // If they reject, clear the link for safety
+      ticket.consultation.meetingLink = null; 
+    }
+    
+    await ticket.save();
+    res.json({ message: consent ? 'Consent granted.' : 'Consent denied.', ticket });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+module.exports = { createTicket, trackTicket, updateTrackedTicketPriority, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics, updateTicketPriority, requestConsultation, consentToConsultation};
