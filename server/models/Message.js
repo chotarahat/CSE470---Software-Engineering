@@ -22,6 +22,10 @@ const messageSchema = new mongoose.Schema({
     required: [true, 'Message text is required'],
     trim: true,
   },
+  audioData: {
+    type: String, 
+    default: null
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Message', messageSchema);

@@ -14,7 +14,11 @@ API.interceptors.request.use((config) => {
 // ── Auth ──────────────────────────────────────────────
 export const register = (data) => API.post('/users/register', data);
 export const login = (data) => API.post('/users/login', data);
+export const resetPassword = (email, newPassword) => API.post('/users/reset-password', { email, newPassword });
+export const verifyMFA=(data)=> API.post('/users/verify-mfa',data);
 export const getProfile = () => API.get('/users/profile');
+export const generateMFA=() => API.post('/users/generate-mfa');
+export const enableMFA = (data) => API.post('/users/enable-mfa',data);
 
 // ── Counselor management (admin) ─────────────────────
 export const getCounselors = () => API.get('/users/counselors');
@@ -25,14 +29,14 @@ export const toggleAvailability = () => API.patch('/users/availability');
 export const submitTicket = (data) => API.post('/tickets', data);
 export const trackTicket = (ticketId, token) =>
   API.get(`/tickets/track/${ticketId}?token=${token}`);
-export const updateTrackedTicketPriority = (ticketId, token, priority) =>
-  API.patch(`/tickets/track/${ticketId}/priority?token=${token}`, { priority });
 export const getTickets = () => API.get('/tickets');
 export const getTicketById = (id) => API.get(`/tickets/${id}`);
 export const updateTicketStatus = (id, status) =>
   API.patch(`/tickets/${id}/status`, { status });
 export const reassignTicket = (id, counselorId) =>
   API.patch(`/tickets/${id}/assign`, { counselorId });
+export const acknowledgeCrisis = (id) =>
+  API.patch(`/tickets/${id}/acknowledge-crisis`);
 export const getAnalytics = () => API.get('/tickets/analytics');
 
 // ── Messages ──────────────────────────────────────────
@@ -48,4 +52,23 @@ export const deleteResource = (id) => API.delete(`/resources/${id}`);
 export const getCategories = () => API.get('/resources/categories');
 export const createCategory = (data) => API.post('/resources/categories', data);
 
+
+// ── Transcripts ───────────────────────────────────────────
+// Counselor / admin export — JWT required
+export const exportTranscript = (ticketMongoId) =>
+  API.get(`/transcripts/${ticketMongoId}/export`, { responseType: 'text' });
+
+// Anonymous student export — token in query string
+export const exportTranscriptAnonymous = (ticketMongoId, token) =>
+  API.get(`/transcripts/${ticketMongoId}/export-anonymous?token=${token}`, {
+    responseType: 'text',
+  });
+
+// ── Reports ───────────────────────────────────────────────
+// Admin only — download full system report as .txt file
+export const generateReport = () =>
+  API.get('/reports/generate', { responseType: 'text' });
+
+//Fetch Logs
+export const getAuditLogs = () => API.get('/audit');
 export default API;

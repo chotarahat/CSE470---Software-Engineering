@@ -44,6 +44,12 @@ const ticketSchema = new mongoose.Schema({
     enum: ['open', 'assigned', 'in-progress', 'responded', 'resolved', 'closed'],
     default: 'open',
   },
+  consultation: {
+    isRequested: { type: Boolean, default: false },
+    consentGiven: { type: Boolean, default: false },
+    meetingLink: { type: String, default: null },
+    platform: { type: String, enum: ['zoom', 'meet', 'other', 'none'], default: 'none' }
+  },
   assignedCounselor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -70,7 +76,7 @@ ticketSchema.statics.VALID_TRANSITIONS = {
   'in-progress':['responded', 'resolved', 'closed'],
   responded:    ['in-progress', 'resolved', 'closed'],
   resolved:     ['closed', 'in-progress'],
-  closed:       [],   // terminal — admin can force reopen via direct status set
+  closed:       [],  
 };
 
 
