@@ -13,7 +13,7 @@ const generateMFA=async (req,res)=>{
     user.twoFactorSecret=secret.base32;
     await user.save();
     
-    qrcode.toDateURL(secret.otpauth_url,(err,date_url)=>{
+    qrcode.toDataURL(secret.otpauth_url,(err,date_url)=>{
       
       if (err) return res.status(500).json({message:"Error genarating QR code"});
       res.json({qrCodeUrl:date_url,secret: secret.base32});
@@ -26,7 +26,7 @@ const generateMFA=async (req,res)=>{
 const enableMFA = async (req,res) =>{
   try{
     const {token}=req.body;
-    const user=await User.findById(req.user._id).secret('+twoFactorSecret');
+    const user=await User.findById(req.user._id).select('+twoFactorSecret');
 
     const verified=speakeasy.totp.verify({
       secret: user.twoFactorSecret,
