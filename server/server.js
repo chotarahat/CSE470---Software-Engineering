@@ -20,7 +20,8 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // =====================
 // ROUTES
@@ -35,7 +36,6 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/mood', require('./routes/moodRoutes'));
 app.use('/api/audit', auditRoutes);
 
-// ✅ QUIZ ROUTE (FIXED LOCATION)
 app.use('/api/quiz', quizRoutes);
 
 // =====================
@@ -44,6 +44,9 @@ app.use('/api/quiz', quizRoutes);
 app.get('/api/health', (req, res) =>
   res.json({ status: 'OK', message: 'Server running' })
 );
+app.get('/',(req,res)=>{
+  res.send("Ventify API is running...");
+});
 
 // =====================
 // 404 HANDLER

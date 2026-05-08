@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { getTickets, updateTicketStatus, toggleAvailability, acknowledgeCrisis } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import TicketChat from '../components/TicketChat';
 import ExportTranscript from '../components/ExportTranscript';
@@ -14,6 +13,7 @@ export default function CounselorDashboard() {
   const [available, setAvailable]     = useState(user?.availability ?? true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [ackLoading, setAckLoading]   = useState(false);
+
 
   const fetchTickets = async () => {
     try {
@@ -30,15 +30,7 @@ export default function CounselorDashboard() {
       const res = await toggleAvailability();
       setAvailable(res.data.availability);
     } catch {/* silent */}
-  };
 
-  const handleStatusChange = async (ticketId, status) => {
-    try {
-      await updateTicketStatus(ticketId, status);
-      setTickets(prev => prev.map(t => t._id === ticketId ? { ...t, status } : t));
-      if (activeTicket?._id === ticketId) setActiveTicket(prev => ({ ...prev, status }));
-    } catch {/* silent */}
-  };
 
   // Counselor acknowledges they have seen the crisis alert
   const handleAcknowledgeCrisis = async (ticketId) => {
@@ -273,6 +265,7 @@ export default function CounselorDashboard() {
               </h3>
               <TicketChat ticket={activeTicket} anonymousToken={null} />
 
+
               {/* Export encrypted transcript — counselor view */}
               <ExportTranscript ticket={activeTicket} anonymousToken={null} />
             </div>
@@ -291,4 +284,5 @@ export default function CounselorDashboard() {
 
     </div>
   );
-}
+};
+};

@@ -52,7 +52,6 @@ export const deleteResource = (id) => API.delete(`/resources/${id}`);
 export const getCategories = () => API.get('/resources/categories');
 export const createCategory = (data) => API.post('/resources/categories', data);
 
-//export default API;
 
 // ── Transcripts ───────────────────────────────────────────
 // Counselor / admin export — JWT required
@@ -69,7 +68,7 @@ export const exportTranscriptAnonymous = (ticketMongoId, token) =>
 // Admin only — download full system report as .txt file
 export const generateReport = () =>
   API.get('/reports/generate', { responseType: 'text' });
-export default API;
 
 //Fetch Logs
 export const getAuditLogs = () => API.get('/audit');
+export default API;

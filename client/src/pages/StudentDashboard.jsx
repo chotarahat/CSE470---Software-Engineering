@@ -1,34 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import api, { trackTicket } from '../services/api';
 import TicketForm from '../components/TicketForm';
 import TicketChat from '../components/TicketChat';
 import ExportTranscript from '../components/ExportTranscript';
-import { trackTicket, getTicketById } from '../services/api';
-import './StudentDashboard.css';
 
-const STORAGE_KEY = 'mindbridge_tickets';
-const BOOKMARK_KEY = 'mindbridge_bookmarks';
+const STORAGE_KEY = 'ventify_student_tickets';
 
 function loadSavedTickets() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
   catch { return []; }
 }
+
 function saveTickets(tickets) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
 }
 
-function loadBookmarkedResources() {
-  try {
-    return JSON.parse(localStorage.getItem(BOOKMARK_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
 export default function StudentDashboard() {
-  const [tab, setTab] = useState('submit'); // 'submit' | 'track' | 'saved'
+  const [tab, setTab] = useState('submit'); // 'submit' | 'track' | 'saved' | 'bookmarks'
   const [submitted, setSubmitted] = useState(null);  // result from TicketForm
   const [savedTickets, setSavedTickets] = useState(loadSavedTickets());
-  const [bookmarkedResources] = useState(loadBookmarkedResources());
+  const [bookmarkedResources, setBookmarkedResources] = useState([]); // Added to prevent crash
 
   // Track form
   const [trackId, setTrackId] = useState('');
@@ -69,19 +60,6 @@ export default function StudentDashboard() {
     }
   };
 
-  const openChat = async (ticketId, token) => {
-    try {
-      // We need the MongoDB _id for the chat; track gives us just the display info
-      const res = await trackTicket(ticketId, token);
-      // We need _id — fetch from track response won't have it; use a workaround:
-      // Store the raw data and pass token; TicketChat uses the _id from the ticket object
-      // The track endpoint doesn't return _id for privacy — we pass ticketId as lookup key
-      setActiveTicket({ ticketId, token, info: res.data });
-    } catch {
-      alert('Could not open this ticket. Check your token.');
-    }
-  };
-
   const statusColor = (s) => {
     if (s === 'open') return 'badge-open';
     if (s === 'in-progress') return 'badge-progress';
@@ -101,9 +79,8 @@ export default function StudentDashboard() {
         {[
           { key: 'submit', label: '+ New Request' },
           { key: 'track',  label: '🔍 Track Ticket' },
-          { key: 'saved',  label: `📋 My Tickets (${savedTickets.length})` },
-          { key: 'bookmarks', label: `🔖 Bookmarks (${bookmarkedResources.length})` },
-         ].map(t => (
+          { key: 'saved',  label: `📋 My Tickets (${savedTickets.length})` }
+        ].map(t => (
           <button
             key={t.key}
             className={`tab-btn ${tab === t.key ? 'active' : ''}`}
@@ -125,7 +102,6 @@ export default function StudentDashboard() {
       {/* ── Submitted confirmation ── */}
       {tab === 'submitted' && submitted && (
         <div className="tab-panel card">
-
           {/* Crisis-specific header */}
           {submitted.isCrisis ? (
             <div className="crisis-confirmation">
@@ -183,7 +159,7 @@ export default function StudentDashboard() {
       {tab === 'track' && (
         <div className="tab-panel">
           {!trackedTicket ? (
-            <div className="card">
+            <>
               <h2 style={{ marginBottom: '1.5rem' }}>Track Your Ticket</h2>
               {trackError && <div className="alert alert-error">{trackError}</div>}
               <form onSubmit={handleTrack}>
@@ -209,9 +185,9 @@ export default function StudentDashboard() {
                   {trackLoading ? 'Looking up...' : 'Find Ticket'}
                 </button>
               </form>
-            </div>
+            </>
           ) : (
-            <div>
+            <>
               <button className="btn btn-secondary btn-sm" style={{ marginBottom: '1rem' }}
                 onClick={() => setTrackedTicket(null)}>← Back</button>
               <div className="card" style={{ marginBottom: '1rem' }}>
@@ -230,11 +206,7 @@ export default function StudentDashboard() {
                 <hr className="divider" />
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{trackedTicket.description}</p>
               </div>
-              {/* Chat requires MongoDB _id — handled via saved tickets flow */}
-              <div className="alert alert-info" style={{ fontSize: '0.82rem' }}>
-                To chat with your counselor, use the <strong>My Tickets</strong> tab if you saved this ticket locally.
-              </div>
-            </div>
+            </>
           )}
         </div>
       )}
@@ -271,6 +243,8 @@ export default function StudentDashboard() {
           )}
         </div>
       )}
+      
+      {/* ── Bookmarks Tab ── */}
       {tab === 'bookmarks' && (
         <div className="tab-panel">
           {bookmarkedResources.length === 0 ? (
@@ -285,7 +259,6 @@ export default function StudentDashboard() {
                   <strong>{r.title}</strong>
                   <p style={{ marginTop: '0.5rem' }}>{r.description}</p>
                 </div>
-
                 {r.url && (
                   <a
                     href={r.url}
@@ -347,21 +320,39 @@ function ActiveTicketView({ ticketId, token }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // We need the Mongo _id; trackTicket doesn't return it (privacy).
-    // So we fetch via the public track endpoint and reconstruct.
-    // The TicketChat component needs _id — we expose it via a special lookup.
     trackTicket(ticketId, token)
       .then(r => {
-        // Attach _id placeholder; backend chat uses ticketId string via a secondary lookup
-        // We store the full response and pass the token; chat resolves by ticket ObjectId
-        // For this to work we need _id — we get it from the track response if we add it server-side.
-        // As a pragmatic workaround, store _id in the saved entry at submit time via the ticket route.
-        // Here we use a trick: query /tickets/track returns enough to render info.
-        // Chat requires _id from the ticket list — we pass ticketId and let TicketChat search.
-        setTicket({ ...r.data, _id: r.data._id || ticketId }); // will be populated if server sends it
+        setTicket({ ...r.data, _id: r.data._id || ticketId }); 
       })
       .catch(() => setError('Could not load ticket.'));
   }, [ticketId, token]);
+
+  const handleStudentRequestCall = async () => {
+    if (!window.confirm("Notify your counselor that you would like a live Voice/Video consultation?")) return;
+    try {
+      await api.post('/messages/anonymous', {
+        ticketId: ticket._id,
+        messageText: "🔔 The student has requested a live Voice/Video consultation. Counselor, please use your dashboard to provide a secure meeting link.",
+        anonymousToken: token
+      });
+      alert("Request sent successfully! Check the chat for your counselor's response.");
+    } catch (err) {
+      alert("Failed to send request.");
+    }
+  };
+
+  const handleConsent = async (consentValue) => {
+    try {
+      const res = await api.patch(`/tickets/track/${ticket.ticketId}/consent`, {
+        anonymousToken: token,
+        consent: consentValue
+      });
+      setTicket({ ...res.data.ticket, _id: ticket._id }); 
+    } catch (err) {
+      alert('Failed to update consent. Please try again.');
+    }
+  };
+
 
   if (error) return <div className="alert alert-error">{error}</div>;
   if (!ticket) return <div className="loading-center"><div className="spinner" /></div>;
@@ -376,8 +367,60 @@ function ActiveTicketView({ ticketId, token }) {
           <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Counselor: {ticket.assignedCounselor || 'Pending'}</span>
         </div>
       </div>
+
+      {/* ── NEW: STUDENT CONSENT UI (If Counselor requested it) ── */}
+      {ticket?.consultation?.isRequested && (
+        <div className="card" style={{ border: '1px solid var(--accent)', marginBottom: '1rem', background: 'rgba(99, 102, 241, 0.05)' }}>
+          <h4 style={{ color: 'var(--accent)', marginTop: 0, marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+            🚨 Live Consultation Requested
+          </h4>
+
+          {!ticket.consultation.consentGiven ? (
+            <>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                Your counselor has offered a live <strong>{ticket.consultation.platform}</strong> consultation. <br/><br/>
+                <strong>Privacy Warning:</strong> To maintain your anonymity, do <b>not</b> use your real name, ensure your camera is turned <b>off</b>, and consider using a third-party voice changer. Do you consent to join this call?
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button className="btn btn-primary btn-sm" onClick={() => handleConsent(true)}>
+                  Yes, I Consent
+                </button>
+                <button className="btn btn-secondary btn-sm" onClick={() => handleConsent(false)}>
+                  No, Thanks
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: '0.85rem', color: 'var(--green)', fontWeight: '600', marginBottom: '0.5rem' }}>
+                ✓ Consent Granted.
+              </p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                Please join using the link below. Remember to keep your camera off!
+              </p>
+              <div style={{ padding: '0.75rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', wordBreak: 'break-all' }}>
+                <strong>Secure Meeting Link: </strong>
+                <a href={ticket.consultation.meetingLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+                  {ticket.consultation.meetingLink}
+                </a>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       <TicketChat ticket={ticket} anonymousToken={token} />
-      {/* Export encrypted transcript — student view (uses anonymous token) */}
+
+      {/* ── NEW: STUDENT REQUEST CONSULTATION BUTTON ── */}
+      <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+        <button 
+          className="btn btn-secondary btn-full" 
+          onClick={handleStudentRequestCall}
+        >
+          📞 Request Voice/Video Consultation
+        </button>
+      </div>
+
       <ExportTranscript ticket={ticket} anonymousToken={token} />
     </div>
   );
