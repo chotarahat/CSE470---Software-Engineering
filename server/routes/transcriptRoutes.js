@@ -15,7 +15,7 @@ router.get(
   exportTranscriptAuthenticated
 );
 
-// Anonymous student export — requires ?token= query param
+// Anonymous student export — requires ?token= query
 router.get(
   '/:ticketId/export-anonymous',
   exportTranscriptAnonymous
