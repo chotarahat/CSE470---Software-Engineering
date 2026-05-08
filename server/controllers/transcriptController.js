@@ -84,7 +84,6 @@ const exportTranscriptAuthenticated = async (req, res) => {
     const filename = `ventify-transcript-${ticket.ticketId}-${Date.now()}.enc.txt`;
 
     // Send the encryption key in a custom response header so the
-    // frontend can display it to the user — separate from the file
     res.setHeader('Content-Type', 'text/plain');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('X-Encryption-Key', key);
