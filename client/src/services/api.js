@@ -11,7 +11,7 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// ── Auth ──────────────────────────────────────────────
+// ── Auth ───────────────────────
 export const register = (data) => API.post('/users/register', data);
 export const login = (data) => API.post('/users/login', data);
 export const resetPassword = (email, newPassword) => API.post('/users/reset-password', { email, newPassword });
@@ -20,12 +20,12 @@ export const getProfile = () => API.get('/users/profile');
 export const generateMFA=() => API.post('/users/generate-mfa');
 export const enableMFA = (data) => API.post('/users/enable-mfa',data);
 
-// ── Counselor management (admin) ─────────────────────
+// ── Counselor management (admin) ────────
 export const getCounselors = () => API.get('/users/counselors');
 export const createCounselor = (data) => API.post('/users/counselors', data);
 export const toggleAvailability = () => API.patch('/users/availability');
 
-// ── Tickets ───────────────────────────────────────────
+// ── Tickets ──────────────
 export const submitTicket = (data) => API.post('/tickets', data);
 export const trackTicket = (ticketId, token) =>
   API.get(`/tickets/track/${ticketId}?token=${token}`);
