@@ -4,7 +4,7 @@ const { encryptTranscript } = require('../utils/transcriptEncryptor');
 
 /**
  * Builds the plain-text transcript string from a ticket + its messages.
- * Format is human-readable so it makes sense after decryption.
+ * Format is human-readable and includes ticket metadata, original concern, and conversation history.
  */
 const buildTranscriptText = (ticket, messages) => {
   const lines = [];
