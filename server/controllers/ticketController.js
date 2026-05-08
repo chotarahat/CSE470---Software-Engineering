@@ -356,12 +356,13 @@ const updateTicketPriority = async (req, res) => {
       return res.status(400).json({ message: "New priority is required" });
     }
 
-    const validPriorities = ['low', 'medium', 'high', 'urgent'];
+   const validPriorities = ['low', 'medium', 'high', 'urgent'];
     if (!validPriorities.includes(newPriority)) {
       return res.status(400).json({ message: "Invalid priority value" });
     }
 
-    const ticket = await Ticket.findOne({ ticketId });
+    
+    const ticket = await Ticket.findById(ticketId); 
 
     if (!ticket) {
       return res.status(404).json({ message: "Ticket not found" });
@@ -449,5 +450,24 @@ const consentToConsultation = async (req, res) => {
   }
 };
 
+const acknowledgeCrisis = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
-module.exports = { createTicket, trackTicket, updateTrackedTicketPriority, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics, updateTicketPriority, requestConsultation, consentToConsultation};
+    // Mark the crisis as acknowledged
+    ticket.crisisAcknowledged = true;
+    await ticket.save();
+
+    res.json({ message: 'Crisis acknowledged successfully', ticket });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { 
+  createTicket, trackTicket, updateTrackedTicketPriority, getTickets, 
+  getTicketById, updateTicketStatus, reassignTicket, getAnalytics, 
+  updateTicketPriority, requestConsultation, consentToConsultation, 
+  acknowledgeCrisis 
+};

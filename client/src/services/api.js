@@ -34,11 +34,13 @@ export const getTicketById = (id) => API.get(`/tickets/${id}`);
 export const updateTicketStatus = (id, status) =>
   API.patch(`/tickets/${id}/status`, { status });
 export const reassignTicket = (id, counselorId) =>
-  API.patch(`/tickets/${id}/assign`, { counselorId });
-export const acknowledgeCrisis = (id) =>
-  API.patch(`/tickets/${id}/acknowledge-crisis`);
+   API.patch(`/tickets/${id}/assign`, { counselorId });
+export const requestConsultation = (ticketId, data) => 
+  API.post(`/tickets/${ticketId}/request-call`, data);
+// export const acknowledgeCrisis = (id) =>
+//   API.patch(`/tickets/${id}/acknowledge-crisis`);
 export const getAnalytics = () => API.get('/tickets/analytics');
-
+export const acknowledgeCrisis = (ticketId) => API.patch(`/tickets/${ticketId}/acknowledge`);
 // ── Messages ──────────────────────────────────────────
 export const getMessages = (ticketId, token) =>
   API.get(`/messages/${ticketId}${token ? `?token=${token}` : ''}`);
@@ -51,7 +53,7 @@ export const createResource = (data) => API.post('/resources', data);
 export const deleteResource = (id) => API.delete(`/resources/${id}`);
 export const getCategories = () => API.get('/resources/categories');
 export const createCategory = (data) => API.post('/resources/categories', data);
-
+export const rateResource = (id, rating) => API.post(`/resources/rate/${id}`, { rating });
 
 // ── Transcripts ───────────────────────────────────────────
 // Counselor / admin export — JWT required

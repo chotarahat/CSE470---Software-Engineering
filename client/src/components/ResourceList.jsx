@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getResources, getCategories } from '../services/api';
+import { getResources, getCategories,rateResource } from '../services/api';
 import './ResourceList.css';
 
 const BOOKMARK_KEY = 'mindbridge_bookmarks';

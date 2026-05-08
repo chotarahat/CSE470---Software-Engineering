@@ -4,16 +4,20 @@ import TicketChat from '../components/TicketChat';
 import ExportTranscript from '../components/ExportTranscript';
 import './CounselorDashboard.css';
 import MfaSetup from '../components/MfaSetup';
+import { getTickets, toggleAvailability, acknowledgeCrisis, requestConsultation, updateTicketStatus } from '../services/api';
 
 export default function CounselorDashboard() {
   const { user } = useAuth();
-  const [tickets, setTickets]         = useState([]);
-  const [loading, setLoading]         = useState(true);
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTicket, setActiveTicket] = useState(null);
-  const [available, setAvailable]     = useState(user?.availability ?? true);
+  const [available, setAvailable] = useState(user?.availability ?? true);
   const [statusFilter, setStatusFilter] = useState('all');
-  const [ackLoading, setAckLoading]   = useState(false);
-
+  const [ackLoading, setAckLoading] = useState(false);
+  
+  // States for consultation request
+  const [meetingLink, setMeetingLink] = useState('');
+  const [callLoading, setCallLoading] = useState(false);
 
   const fetchTickets = async () => {
     try {
@@ -30,7 +34,7 @@ export default function CounselorDashboard() {
       const res = await toggleAvailability();
       setAvailable(res.data.availability);
     } catch {/* silent */}
-
+  };
 
   // Counselor acknowledges they have seen the crisis alert
   const handleAcknowledgeCrisis = async (ticketId) => {
@@ -50,6 +54,40 @@ export default function CounselorDashboard() {
       );
     } catch {/* silent */}
     finally { setAckLoading(false); }
+  };
+
+  // Send a voice/video consultation request to the student
+  const handleRequestCall = async () => {
+    if (!meetingLink.trim()) return alert("Please provide a valid meeting link (e.g., Zoom/Meet).");
+    setCallLoading(true);
+    try {
+      await requestConsultation(activeTicket._id, { meetingLink, platform: 'other' });
+      alert("Consultation request sent to the student!");
+      setMeetingLink(''); // clear the input
+    } catch (error) {
+      alert("Failed to send consultation request.");
+    } finally {
+      setCallLoading(false);
+    }
+  };
+
+  // Change the status of a ticket
+  const handleStatusChange = async (ticketId, newStatus) => {
+    try {
+      await updateTicketStatus(ticketId, newStatus);
+      
+      // Update the main list so it moves to the correct filter tab
+      setTickets(prev => prev.map(t => 
+        t._id === ticketId ? { ...t, status: newStatus } : t
+      ));
+      
+      // Update the actively viewed ticket so the badge changes instantly
+      if (activeTicket && activeTicket._id === ticketId) {
+        setActiveTicket({ ...activeTicket, status: newStatus });
+      }
+    } catch (error) {
+      alert("Failed to update ticket status.");
+    }
   };
 
   // Crisis tickets float to the top of the list
@@ -263,9 +301,34 @@ export default function CounselorDashboard() {
               <h3 style={{ marginBottom: '0.75rem', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.95rem' }}>
                 Conversation
               </h3>
+              
+              {/* Only ONE Chat Component */}
               <TicketChat ticket={activeTicket} anonymousToken={null} />
 
-
+              {/* Consultation Link Request Box */}
+              <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                <h4 style={{ marginBottom: '0.5rem' }}>Request Voice/Video Consultation</h4>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                  Provide a secure meeting link to invite the student to a live session.
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input 
+                    type="url" 
+                    placeholder="https://zoom.us/j/..." 
+                    value={meetingLink}
+                    onChange={(e) => setMeetingLink(e.target.value)}
+                    style={{ flex: 1, padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                  />
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={handleRequestCall}
+                    disabled={callLoading}
+                  >
+                    {callLoading ? 'Sending...' : '📞 Send Request'}
+                  </button>
+                </div>
+              </div>
+            
               {/* Export encrypted transcript — counselor view */}
               <ExportTranscript ticket={activeTicket} anonymousToken={null} />
             </div>
@@ -274,15 +337,16 @@ export default function CounselorDashboard() {
       </div>
 
       {/* ── BOTTOM PANEL: SECURITY SETTINGS (MFA SETUP) ── */}
-      <section className="security-section" style={{ marginTop: '4rem', paddingBottom: '2rem' }}>
-        <hr style={{ marginBottom: '2rem', borderColor: 'var(--border)' }} />
-        <div style={{ padding: '0 1rem' }}>
-          <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Account Security Settings</h2>
-          <MfaSetup />
-        </div>
-      </section>
+      {user && !user.isMFAEnabled && (
+        <section className="security-section" style={{ marginTop: '4rem', paddingBottom: '2rem' }}>
+          <hr style={{ marginBottom: '2rem', borderColor: 'var(--border)' }} />
+          <div style={{ padding: '0 1rem' }}>
+            <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Account Security Settings</h2>
+            <MfaSetup />
+          </div>
+        </section>
+      )}
 
     </div>
   );
-};
-};
+}

@@ -18,9 +18,9 @@ const generateReport = async (req, res) => {
     const resolved     = await Ticket.countDocuments({ status: 'resolved' });
     const closed       = await Ticket.countDocuments({ status: 'closed' });
 
-    const totalCrisis          = await Ticket.countDocuments({ isCrisis: true });
-    const unacknowledgedCrisis = await Ticket.countDocuments({ isCrisis: true, crisisAcknowledged: false });
-
+    const totalCrisis          = await Ticket.countDocuments({ crisisFlag: true });
+    const unacknowledgedCrisis = await Ticket.countDocuments({ crisisFlag: true, crisisAcknowledged: false });
+    
     const resolutionRate = total > 0
       ? Math.round(((resolved + closed) / total) * 100)
       : 0;

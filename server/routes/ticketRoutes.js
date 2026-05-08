@@ -10,7 +10,8 @@ const {
   reassignTicket,
   getAnalytics,
   consentToConsultation,
-  requestConsultation
+  requestConsultation,
+  acknowledgeCrisis
 } = require('../controllers/ticketController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
@@ -28,6 +29,7 @@ router.get('/:id', protect, authorize('admin', 'counselor'), getTicketById);
 router.patch('/:id/status', protect, authorize('admin', 'counselor'), updateTicketStatus);
 router.patch('/:id/assign', protect, authorize('admin'), reassignTicket);
 router.post('/:ticketId/request-call', protect, requestConsultation);
+router.patch('/:id/acknowledge', protect, authorize('admin', 'counselor'), acknowledgeCrisis);
 
 // Add to your Public routes (Student)
 router.patch('/track/:ticketId/consent', consentToConsultation);

@@ -17,8 +17,7 @@ const buildTranscriptText = (ticket, messages) => {
   lines.push(`Category   : ${ticket.category?.name || 'Unknown'}`);
   lines.push(`Priority   : ${ticket.priority.toUpperCase()}`);
   lines.push(`Status     : ${ticket.status}`);
-  lines.push(`Crisis Flag: ${ticket.isCrisis ? '⚠ YES — Crisis ticket' : 'No'}`);
-  lines.push(`Submitted  : ${new Date(ticket.createdAt).toLocaleString()}`);
+  lines.push(`Crisis Flag: ${ticket.crisisFlag ? '⚠ YES — Crisis ticket' : 'No'}`);  lines.push(`Submitted  : ${new Date(ticket.createdAt).toLocaleString()}`);
   lines.push(`Exported   : ${new Date().toLocaleString()}`);
   lines.push('');
   lines.push('ORIGINAL CONCERN:');

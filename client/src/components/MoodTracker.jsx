@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-
 export default function MoodTracker() {
   const [isVisible, setIsVisible] = useState(false);
   const [hasLoggedToday, setHasLoggedToday] = useState(true); 
   const [loading, setLoading] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
 
-  // 1. Keep Device ID in localStorage so their backend history is preserved
   const getDeviceId = () => {
     let id = localStorage.getItem('ventify_device_id');
     if (!id) {
@@ -16,7 +14,6 @@ export default function MoodTracker() {
     return id;
   };
 
-  // 2. 🚀 FIX: Use sessionStorage so it pops up every new session/sign-in
   useEffect(() => {
     const hasLoggedThisSession = sessionStorage.getItem('ventify_session_logged');
     if (!hasLoggedThisSession) {
@@ -35,17 +32,16 @@ export default function MoodTracker() {
       const response = await fetch('http://localhost:5000/api/mood', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId, score, emotionTag }),
+        body: JSON.stringify({ deviceId, score, emotionTag, notes: '' })
       });
 
-      if (response.ok || response.status === 201) {
-        // 3. 🚀 FIX: Save the completion flag to sessionStorage
+      if (response.ok) {
         sessionStorage.setItem('ventify_session_logged', 'true');
-        setShowThankYou(true);
         
-
+        setShowThankYou(true);
         setTimeout(() => {
           setIsVisible(false);
+          setShowThankYou(false);
         }, 2000);
       }
     } catch (error) {

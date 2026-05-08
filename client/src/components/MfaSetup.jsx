@@ -1,19 +1,28 @@
 import React, { useState } from 'react';
-import { generateMFA, enableMFA } from '../services/api';
+import api from '../services/api'; // Changed this line to import the default api instance
 
 export default function MfaSetup() {
-  const [step, setStep] = useState(1); // 1: Start, 2: Scan QR, 3: Success
+  const [step, setStep] = useState(1); 
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [mfaToken, setMfaToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Helper to get headers safely
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
   const handleGenerate = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await generateMFA();
-      setQrCodeUrl(res.data.qrCodeUrl);
+      // Send the request directly with the auth headers attached
+      const res = await api.post('/users/generate-mfa', {}, getAuthHeaders());
+      
+      const qrUrl = res.data ? res.data.qrCodeUrl : res.qrCodeUrl;
+      setQrCodeUrl(qrUrl);
       setStep(2);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to generate QR code.');
@@ -27,7 +36,8 @@ export default function MfaSetup() {
     setLoading(true);
     setError('');
     try {
-      await enableMFA({ token: mfaToken });
+      // Send the request directly with the payload AND the auth headers attached
+      await api.post('/users/enable-mfa', { token: mfaToken }, getAuthHeaders());
       setStep(3);
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid code. Please try again.');
@@ -39,22 +49,20 @@ export default function MfaSetup() {
   if (step === 3) {
     return (
       <div className="card" style={{ padding: '2rem', textAlign: 'center', borderColor: 'green' }}>
-        <h3 style={{ color: 'green' }}>✅ 2FA Successfully Enabled!</h3>
-        <p>Your account is now secured. You will be prompted for a code on your next login.</p>
+        <h3 style={{ color: 'green' }}>✅ 2FA Successfully Enabled</h3>
+        <p>Your account is now secured with Microsoft Authenticator.</p>
       </div>
     );
   }
 
   return (
-    <div className="card" style={{ padding: '2rem', maxWidth: '500px', margin: '0 auto' }}>
-      <h2>Two-Factor Authentication (2FA)</h2>
-      
-      {error && <div className="alert alert-error" style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
-
+    <div className="card" style={{ padding: '2rem' }}>
       {step === 1 && (
-        <div>
+        <div style={{ textAlign: 'center' }}>
+          <span style={{ fontSize: '3rem' }}>🔒</span>
+          <h3>Two-Factor Authentication</h3>
           <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
-            Secure your counselor account by requiring a 6-digit code from the Google Authenticator app every time you log in.
+            Secure your counselor account by requiring a 6-digit code from the Authenticator app every time you log in.
           </p>
           <button onClick={handleGenerate} disabled={loading} className="btn btn-primary">
             {loading ? 'Generating...' : 'Set Up 2FA'}
@@ -64,9 +72,13 @@ export default function MfaSetup() {
 
       {step === 2 && (
         <div>
-          <p><strong>1. Scan this QR Code</strong> using your Google Authenticator app.</p>
+          <p><strong>1. Scan this QR Code</strong> using your Microsoft Authenticator app.</p>
           <div style={{ display: 'flex', justifyContent: 'center', margin: '1.5rem 0' }}>
-            <img src={qrCodeUrl} alt="2FA QR Code" style={{ border: '4px solid white', borderRadius: '8px' }} />
+            {qrCodeUrl ? (
+                <img src={qrCodeUrl} alt="2FA QR Code" style={{ border: '4px solid white', borderRadius: '8px' }} />
+            ) : (
+                <div className="spinner" />
+            )}
           </div>
           
           <p><strong>2. Enter the 6-digit code</strong> the app generates below to verify setup.</p>
@@ -84,6 +96,7 @@ export default function MfaSetup() {
               {loading ? 'Verifying...' : 'Enable 2FA'}
             </button>
           </form>
+          {error && <div className="alert alert-error" style={{ marginTop: '1rem' }}>{error}</div>}
         </div>
       )}
     </div>
