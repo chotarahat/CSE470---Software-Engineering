@@ -7,6 +7,7 @@ import {
 } from '../services/api';
 import GenerateReport from '../components/GenerateReport';
 import AuditLogTable from '../components/AuditLogTable';
+import Heatmap from "../components/Heatmap";
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -24,6 +25,7 @@ export default function AdminDashboard() {
           { key: 'counselors', label: '👥 Counselors' },
           { key: 'resources',  label: '📚 Resources' },
           { key: 'audit-logs', label: '📝 Audit Logs' },
+          { key: 'heatmap',    label: '📈 Heatmap' },
         ].map(t => (
           <button key={t.key} className={`tab-btn ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>
             {t.label}
@@ -35,6 +37,7 @@ export default function AdminDashboard() {
       {tab === 'counselors' && <CounselorsTab />}
       {tab === 'resources'  && <ResourcesTab />}
       {tab === 'audit-logs' && <AuditLogTable />}
+      {tab === 'heatmap' && <Heatmap />}
     </div>
   );
 }
@@ -560,7 +563,10 @@ function ResourcesTab() {
           }
         </div>
       </div>
-
+      <div className="card" style={{ marginBottom: '2rem' }}>
+        <h2>Ticket Submission Heatmap</h2>
+        <Heatmap />
+      </div> 
       {/* Resource list with Feature 4 filters */}
       <div>
         <div className="section-header">

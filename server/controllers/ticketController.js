@@ -400,6 +400,35 @@ const updateTicketPriority = async (req, res) => {
   }
 };
 
+// GET /api/tickets/heatmap
+const getTicketHeatmap = async (req, res) => {
+  try {
+    const heatmapData = await Ticket.aggregate([
+      {
+        $group: {
+          _id: {
+            day: { $dayOfWeek: "$createdAt" },  // 1=Sunday
+            hour: { $hour: "$createdAt" }       // 0–23
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          day: "$_id.day",
+          hour: "$_id.hour",
+          count: 1
+        }
+      }
+    ]);
+
+    res.json(heatmapData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // POST /api/tickets/:ticketId/request-call (Counselor only)
 const requestConsultation = async (req, res) => {
   try {
@@ -449,5 +478,4 @@ const consentToConsultation = async (req, res) => {
   }
 };
 
-
-module.exports = { createTicket, trackTicket, updateTrackedTicketPriority, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics, updateTicketPriority, requestConsultation, consentToConsultation};
+module.exports = { createTicket, trackTicket, updateTrackedTicketPriority, getTickets, getTicketById, updateTicketStatus, reassignTicket, getAnalytics, updateTicketPriority, getTicketHeatmap, requestConsultation, consentToConsultation };
