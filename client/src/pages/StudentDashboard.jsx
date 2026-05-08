@@ -31,7 +31,7 @@ export default function StudentDashboard() {
   // Selected ticket for chat
   const [activeTicket, setActiveTicket] = useState(null);
 
-  // After successful submission, save token locally
+  // After successful submission, save token locallyyyyyyyyyyyyyy
   const handleSubmitSuccess = (data) => {
     const entry = {
       ticketId: data.ticketId,

@@ -3,7 +3,7 @@ import { exportTranscript, exportTranscriptAnonymous } from '../services/api';
 import './ExportTranscript.css';
 
 /**
- * ExportTranscript
+ * ExportTranscriptjsx
  *
  * Props:
  *   ticket        — the ticket object (must have _id and ticketId)

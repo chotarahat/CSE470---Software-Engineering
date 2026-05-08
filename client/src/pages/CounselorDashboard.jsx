@@ -32,7 +32,7 @@ export default function CounselorDashboard() {
     } catch {/* silent */}
 
 
-  // Counselor acknowledges they have seen the crisis alert
+  // Counselor acknowledges they have seen the crisis alerttttttttt
   const handleAcknowledgeCrisis = async (ticketId) => {
     setAckLoading(true);
     try {
