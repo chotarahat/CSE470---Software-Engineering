@@ -58,7 +58,17 @@ const getResources = async (req, res) => {
         .sort({ createdAt: -1 });
     }
 
-    res.json(resources);
+    // Ensure all resources have consistent numeric rating values
+    const sanitizedResources = resources.map(resource => {
+      const sanitized = resource.toObject();
+      // Ensure rating fields are always numbers, never null/undefined
+      sanitized.ratingCount = Number(sanitized.ratingCount) || 0;
+      sanitized.ratingSum = Number(sanitized.ratingSum) || 0;
+      sanitized.averageRating = Number(sanitized.averageRating) || 0;
+      return sanitized;
+    });
+
+    res.json(sanitizedResources);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -221,9 +231,10 @@ const rateResource = async (req, res) => {
     const { id } = req.params;
     const { rating } = req.body;
 
-    if (!rating || rating < 1 || rating > 5) {
+    // Validate rating input
+    if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5 || !Number.isInteger(rating)) {
       return res.status(400).json({
-        message: 'Rating must be 1 to 5'
+        message: 'Rating must be an integer between 1 and 5'
       });
     }
 
@@ -233,20 +244,140 @@ const rateResource = async (req, res) => {
       return res.status(404).json({ message: 'Resource not found' });
     }
 
+    // Data integrity check and correction for existing resources
+    if (resource.ratingCount === undefined || resource.ratingCount === null) {
+      resource.ratingCount = 0;
+    }
+    if (resource.ratingSum === undefined || resource.ratingSum === null) {
+      resource.ratingSum = 0;
+    }
+    if (resource.averageRating === undefined || resource.averageRating === null) {
+      resource.averageRating = 0;
+    }
+
+    // Update rating statistics
     resource.ratingCount += 1;
     resource.ratingSum += rating;
-    resource.averageRating =
-      resource.ratingSum / resource.ratingCount;
+
+    // Calculate average rating with proper precision
+    resource.averageRating = Number((resource.ratingSum / resource.ratingCount).toFixed(2));
+
+    // Additional validation: ensure average is within valid range
+    if (resource.averageRating < 1 || resource.averageRating > 5) {
+      console.error(`Invalid average rating calculated: ${resource.averageRating} for resource ${id}`);
+      // Reset to safe values
+      resource.ratingCount = 1;
+      resource.ratingSum = rating;
+      resource.averageRating = rating;
+    }
 
     await resource.save();
 
+    console.log(`Rating submitted for resource ${id}: ${rating}, new average: ${resource.averageRating} (${resource.ratingCount} ratings)`);
+
     res.json({
-      message: 'Rating submitted',
+      message: 'Rating submitted successfully',
       averageRating: resource.averageRating,
-      ratingCount: resource.ratingCount
+      ratingCount: resource.ratingCount,
+      newRating: rating
     });
 
   } catch (error) {
+    console.error('Rating submission error:', error);
+    res.status(500).json({
+      message: 'Failed to submit rating',
+      error: error.message
+    });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/resources/recalculate-ratings (ADMIN ONLY)
+// ─────────────────────────────────────────────────────────────
+const recalculateRatings = async (req, res) => {
+  try {
+    const resources = await Resource.find({});
+    let updatedCount = 0;
+    let errorCount = 0;
+
+    for (const resource of resources) {
+      try {
+        // Ensure all rating fields exist
+        const ratingCount = resource.ratingCount || 0;
+        const ratingSum = resource.ratingSum || 0;
+
+        // Recalculate average rating
+        const correctAverage = ratingCount > 0 ? Number((ratingSum / ratingCount).toFixed(2)) : 0;
+
+        // Only update if there's a discrepancy
+        if (Math.abs((resource.averageRating || 0) - correctAverage) > 0.01) {
+          resource.averageRating = correctAverage;
+          await resource.save();
+          updatedCount++;
+        }
+      } catch (error) {
+        console.error(`Error recalculating ratings for resource ${resource._id}:`, error);
+        errorCount++;
+      }
+    }
+
+    res.json({
+      message: 'Rating recalculation completed',
+      totalResources: resources.length,
+      updatedResources: updatedCount,
+      errors: errorCount
+    });
+
+  } catch (error) {
+    console.error('Recalculation error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/resources/heatmap
+// Returns activity heatmap data (day vs hour) for dashboard visualization
+// ─────────────────────────────────────────────────────────────
+const getHeatmap = async (req, res) => {
+  try {
+    const Ticket = require('../models/Ticket');
+    
+    // Fetch all tickets to compute heatmap data
+    const tickets = await Ticket.find({});
+    
+    // Initialize heatmap data structure
+    const heatmapData = [];
+    
+    // Build heatmap by day of week (1-7) and hour of day (0-23)
+    // Day mapping: 1=Sunday, 2=Monday, ..., 7=Saturday (ISO week day convention)
+    for (let day = 1; day <= 7; day++) {
+      for (let hour = 0; hour < 24; hour++) {
+        let count = 0;
+        
+        // Count tickets created at this day/hour
+        tickets.forEach(ticket => {
+          const date = new Date(ticket.createdAt);
+          // Convert JavaScript getDay() (0-6, 0=Sunday) to grid day (1-7, 1=Sunday)
+          const ticketDay = date.getDay() + 1;
+          const ticketHour = date.getHours();
+          
+          if (ticketDay === day && ticketHour === hour) {
+            count++;
+          }
+        });
+        
+        heatmapData.push({
+          day,
+          hour,
+          count,
+          intensity: Math.min(count / 5, 1) // Normalize intensity
+        });
+      }
+    }
+    
+    res.json(heatmapData);
+  } catch (error) {
+    console.error('Heatmap error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -262,5 +393,7 @@ module.exports = {
   getCategories,
   createCategory,
   deleteCategory,
-  rateResource
+  rateResource,
+  recalculateRatings,
+  getHeatmap
 };

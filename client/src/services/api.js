@@ -73,4 +73,8 @@ export const generateReport = () =>
 
 //Fetch Logs
 export const getAuditLogs = () => API.get('/audit');
+
+export const getHeatmap=() => API.get('/tickets/heatmap');
+
 export default API;
+
