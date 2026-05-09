@@ -356,13 +356,12 @@ const updateTicketPriority = async (req, res) => {
       return res.status(400).json({ message: "New priority is required" });
     }
 
-   const validPriorities = ['low', 'medium', 'high', 'urgent'];
+    const validPriorities = ['low', 'medium', 'high', 'urgent'];
     if (!validPriorities.includes(newPriority)) {
       return res.status(400).json({ message: "Invalid priority value" });
     }
 
-    
-    const ticket = await Ticket.findById(ticketId); 
+    const ticket = await Ticket.findOne({ ticketId });
 
     if (!ticket) {
       return res.status(404).json({ message: "Ticket not found" });
@@ -397,6 +396,37 @@ const updateTicketPriority = async (req, res) => {
     });
 
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getTicketHeatmap = async (req, res) => {
+  try {
+    const stats = await Ticket.aggregate([
+      {
+        $project: {
+          day: { $dayOfWeek: "$createdAt" }, // No space allowed here
+          hour: { $hour: "$createdAt" }      // No space allowed here
+        }
+      },
+      {
+        $group: {
+          _id: { day: "$day", hour: "$hour" }, // Ensure no spaces
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          day: "$_id.day",
+          hour: "$_id.hour",
+          count: 1
+        }
+      }
+    ]);
+    res.json(stats);
+  } catch (error) {
+    console.error("Aggregation Crash:", error); 
     res.status(500).json({ message: error.message });
   }
 };
@@ -450,24 +480,34 @@ const consentToConsultation = async (req, res) => {
   }
 };
 
+// PATCH /api/tickets/:id/acknowledge (Counselor only)
 const acknowledgeCrisis = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
-    // Mark the crisis as acknowledged
     ticket.crisisAcknowledged = true;
+    ticket.crisisAcknowledgedAt = new Date();
     await ticket.save();
 
-    res.json({ message: 'Crisis acknowledged successfully', ticket });
+    res.json({ message: 'Crisis alert acknowledged', ticket });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 module.exports = { 
-  createTicket, trackTicket, updateTrackedTicketPriority, getTickets, 
-  getTicketById, updateTicketStatus, reassignTicket, getAnalytics, 
-  updateTicketPriority, requestConsultation, consentToConsultation, 
-  acknowledgeCrisis 
+  createTicket, 
+  trackTicket, 
+  updateTrackedTicketPriority, 
+  getTickets, 
+  getTicketById, 
+  updateTicketStatus, 
+  reassignTicket, 
+  getAnalytics, 
+  updateTicketPriority, 
+  getTicketHeatmap, 
+  requestConsultation, 
+  consentToConsultation,
+  acknowledgeCrisis
 };

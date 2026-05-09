@@ -11,7 +11,8 @@ const {
   getAnalytics,
   consentToConsultation,
   requestConsultation,
-  acknowledgeCrisis
+  acknowledgeCrisis,
+  getTicketHeatmap
 } = require('../controllers/ticketController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
@@ -37,4 +38,6 @@ router.patch('/track/:ticketId/consent', consentToConsultation);
 // Add to your Protected routes (Counselor)
 router.post('/:id/request-call', protect, authorize('counselor', 'admin'), requestConsultation);
 
+// Add this to your ticket routes
+router.get('/heatmap', protect, authorize('admin', 'counselor'), getTicketHeatmap);
 module.exports = router;

@@ -19,8 +19,7 @@ export default function StudentDashboard() {
   const [tab, setTab] = useState('submit'); // 'submit' | 'track' | 'saved' | 'bookmarks'
   const [submitted, setSubmitted] = useState(null);  // result from TicketForm
   const [savedTickets, setSavedTickets] = useState(loadSavedTickets());
-  const [bookmarkedResources, setBookmarkedResources] = useState([]); // Added to prevent crash
-
+const [bookmarkedResources, setBookmarkedResources] = useState([]); // eslint-disable-line
   // Track form
   const [trackId, setTrackId] = useState('');
   const [trackToken, setTrackToken] = useState('');

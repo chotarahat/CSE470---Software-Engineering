@@ -7,6 +7,7 @@ import {
 } from '../services/api';
 import GenerateReport from '../components/GenerateReport';
 import AuditLogTable from '../components/AuditLogTable';
+import Heatmap from "../components/heatmap";
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -24,6 +25,7 @@ export default function AdminDashboard() {
           { key: 'counselors', label: '👥 Counselors' },
           { key: 'resources',  label: '📚 Resources' },
           { key: 'audit-logs', label: '📝 Audit Logs' },
+          { key: 'heatmap',    label: '📈 Heatmap' },
         ].map(t => (
           <button key={t.key} className={`tab-btn ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>
             {t.label}
@@ -35,6 +37,7 @@ export default function AdminDashboard() {
       {tab === 'counselors' && <CounselorsTab />}
       {tab === 'resources'  && <ResourcesTab />}
       {tab === 'audit-logs' && <AuditLogTable />}
+      {tab === 'heatmap' && <HeatmapTab />}
     </div>
   );
 }
@@ -599,6 +602,23 @@ function ResourcesTab() {
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  );
+}
+/* ═══════════════════════════════════════════
+   Heatmap Tab
+═══════════════════════════════════════════ */
+function HeatmapTab() {
+  return (
+    <div className="card" style={{ marginTop: '1.5rem', padding: '2rem' }}>
+      <h3 className="card-section-title">Ticket Submission Analytics</h3>
+      <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+        This heatmap tracks peak ticket submission intensity. Rows represent days (Sunday-Saturday) and columns represent hours (12AM-11PM).
+      </p>
+      {/* Remove the white background div so it uses the heatmap.css dark theme styles */}
+      <div style={{ display: 'flex', justifyContent: 'center', borderRadius: '8px' }}>
+        <Heatmap />
       </div>
     </div>
   );
